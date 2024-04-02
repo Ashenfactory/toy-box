@@ -1,0 +1,1179 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>N×M</title>
+	<link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' fill='%23dce0c7' viewBox='0 0 3 3'><path fill='%23999c57' d='M0 0h1v1H0zm1 0h1v1H1zM0 1h1v1H0zm1 1h1v1H1z'/><path d='M2 0h1v1H2zM1 1h1v1H1zm1 0h1v1H2zM0 2h1v1H0z'/></svg>">
+	<style>
+		:root {
+			--backgroundImage: none;
+			--backgroundSize: 0;
+			--tileSize: calc(20vmin - 3px);
+			--gridCols: 4;
+			--tileColor1: #dce0c7;
+			--tileColor2: #999c57;
+			--numberColor: #ffffff;
+		}
+
+		body,
+		html {
+			height: 100%;
+			width: 100%;
+			margin: 0;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			font-family: system-ui, sans-serif;
+		}
+		input,
+		button {
+			font-family: system-ui, sans-serif;
+		}
+
+		.toolbar {
+			display: flex;
+			align-items: center;
+			width: 80vmin;
+			font-size: 1.25rem;
+		}
+
+		.toolbar > div {
+			flex: 1;
+			gap: .5rem;
+			display: flex;
+			align-items: center;
+		}
+
+		.toolbar > div:last-of-type {
+			justify-content: right;
+		}
+
+		.toolbar.buttons button {
+			position: relative;
+		}
+
+		.reset-button,
+		.toolbar.buttons button,
+		.toolbar .icon {
+			background: none;
+			border: none;
+			padding: 0;
+			width: 1.5rem;
+			height: 1.5rem;
+			border-radius: 0;
+		}
+
+		.reset-button:hover {
+			opacity: .5;
+		}
+
+		.reset-button {
+			cursor: pointer;
+			position: absolute;
+			top: 1rem;
+			right: 1rem;
+		}
+
+		button.muted path:last-child {
+			display: none;
+		}
+
+		.buttons button + button {
+			margin-left: .5rem;
+		}
+
+		.buttons button {
+			cursor: pointer;
+		}
+
+		.buttons button:hover {
+			opacity: .5;
+		}
+
+		button[disabled],
+		input[disabled],
+		.inactive .icon {
+			opacity: .25 !important;
+			cursor: auto;
+		}
+
+		.board-container {
+			display: flex;
+			gap: 2px;
+			flex-direction: column;
+			align-items: center;
+			justify-content: space-between;
+			width: 90vmin;
+			aspect-ratio: 1;
+			min-width: calc(85vmin + 2.5rem);
+			padding: 2.5vmin;
+			background: #ccc;
+			border-radius: 1rem;
+		}
+
+		.board {
+			display: grid;
+			gap: 1px;
+			grid-template-columns: repeat(var(--gridCols), 1fr);
+			background: #333;
+			border: 2px solid #333;
+			border-radius: 4px;
+			position: relative;
+			touch-action: pinch-zoom;
+		}
+
+		[data-index] {
+			width: var(--tileSize);
+			aspect-ratio: 1;
+			position: relative;
+			container-type: inline-size;
+			border-radius: 2%;
+			transition: opacity .10s ease, background-color .10s ease;
+		}
+
+		[data-empty="0"] {
+			cursor: grab;
+			z-index: 1;
+		}
+
+		[data-empty="0"]:active {
+			cursor: grabbing;
+		}
+
+		[data-empty="0"]::before {
+			content: '';
+			border-radius: 2%;
+			position: absolute;
+			height: 100%;
+			width: 100%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			font-size: 25cqw;
+			color: var(--numberColor);
+			background-image: var(--backgroundImage);
+			background-size: var(--backgroundSize);
+			background-position: inherit;
+			font-weight: bold;
+			text-shadow: 0 0 2px #000, 0 0 2px #000;
+		}
+
+		.show-numbers [data-empty="0"]::before {
+			content: attr(data-index);
+		}
+
+		.odd::before {
+			background-color: var(--tileColor1);
+		}
+
+		.even::before {
+			background-color: var(--tileColor2);
+		}
+
+		[data-empty="1"] {
+			background-color: transparent;
+		}
+
+		.board:not(.solved) [data-index].active {
+			opacity: .5;
+			background-color: #aaa;
+		}
+
+		[data-empty="1"].active {
+			z-index: 0;
+		}
+
+		.board.solved {
+			background-image: var(--backgroundImage);
+			background-size: 100%;
+		}
+
+		.board.solved.hide-tiles [data-index] {
+			opacity: 0;
+		}
+
+		.board.solved [data-index] {
+			cursor: auto;
+		}
+
+		.inputs {
+			display: flex;
+		}
+
+		hr {
+			border: none;
+			border-bottom: 1px solid #ccc;
+		}
+
+		.inputs input {
+			margin: .5rem;
+		}
+
+		.bold {
+			font-weight: bold;
+		}
+
+		.label-align {
+			display: flex;
+			align-self: center;
+		}
+
+		label {
+			font-size: .8rem;
+		}
+
+		input[type="number"] {
+			width: 3rem;
+		}
+
+		dialog::backdrop {
+			background-color: #0008;
+		}
+
+		dialog {
+			border: 1px solid #ccc;
+			border-radius: 4px;
+		}
+
+		dialog p {
+			margin-top: 0;
+			margin-bottom: .5rem;
+			max-width: 500px;
+		}
+
+		.help-text {
+			font-size: .8rem;
+			color: #777;
+			margin: 0;
+		}
+
+		#errorText {
+			white-space: pre-wrap;
+			font-size: .8rem;
+		}
+
+		dialog button {
+			border-radius: 4px;
+			border: 1px solid #333;
+			color: #333;
+			background-color: #eee;
+			padding: .25rem;
+			width: 100%;
+		}
+
+		dialog .buttons {
+			width: 100%;
+			display: flex;
+		}
+
+		dialog .buttons .primary {
+			background-color: #3e8acc;
+			color: #fff;
+			border: none;
+		}
+
+		#errorModal .buttons {
+			justify-content: flex-end;
+		}
+
+		#errorModal button {
+			width: auto;
+			padding-left: .5rem;
+			padding-right: .5rem;
+		}
+
+		.drop-prompt {
+			filter: invert(20%);
+			outline: 4px solid #70baff;
+			background-color: #98ceff;
+		}
+
+		.drop-prompt * {
+			pointer-events: none;
+		}
+
+		.notification {
+			position: fixed;
+			top: 10px;
+			padding: 10px 2rem;
+			background-color: #fff;
+			border: 1px solid #ccc;
+			margin: 0 auto;
+			border-radius: 4px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
+			z-index: 9999;
+			animation: slideFadeIn .5s ease forwards, fadeOut .5s ease forwards 2s;
+		}
+
+		@keyframes slideFadeIn {
+			0% {
+				opacity: 0;
+				transform: translateY(-100%);
+			}
+			100% {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		@keyframes fadeOut {
+			0% {
+				opacity: 1;
+			}
+			100% {
+				opacity: 0;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="board-container">
+		<div class="toolbar inactive" id="stats">
+			<div title="Time taken">
+				<svg class="icon" viewBox="0 0 14 14" fill="none" stroke="#000">
+					<circle cx="7" cy="7" r="6"/>
+					<path d="M7 3V7h3" stroke-linecap="round"/>
+				</svg>
+				<span id="board-time">00:00</span>
+			</div>
+			<div title="Moves used">
+				<span id="move-count">0</span>
+				<svg class="icon" viewBox="0 0 14 14" stroke="#000" stroke-width="2">
+					<path d="M2 7H12M7 2V12" fill="none" stroke="#000"/>
+					<path d="M7 1l1 1H6z"/>
+					<path d="M7 13l1 -1H6z"/>
+					<path d="M1 7l1 1V6z"/>
+					<path d="M13 7l-1 1V6z"/>
+				</svg>
+			</div>
+		</div>
+		<div class="board" id="board">
+		</div>
+		<div class="toolbar buttons">
+			<div>
+				<button id="openSettings" title="Settings">
+					<svg viewBox="0 0 14 14" stroke-width="3" stroke="#000" fill="none">
+						<circle cx="7" cy="7" r="4"/>
+						<circle cx="7" cy="7" r="5" stroke-linecap="round" stroke-dasharray="0 3.926"/>
+					</svg>
+				</button>
+				<button id="toggleSound" title="Toggle sound">
+					<svg viewBox="0 0 14 14" stroke="#000">
+						<path d="m1 4v5m3 0 3 2V2L4 4z" stroke-width="2"/>
+						<path fill="none" d="M9 4a2 1 90 010 4M10 2a2 1 90 010 8"/>
+					</svg>
+				</button>
+				<button id="share" title="Share board">
+					<svg viewBox="0 0 14 14" stroke="#000" stroke-width="2" fill="none">
+						<path d="M5 2H2V12H12V8" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+						<path d="M6 10V6a2 2 90 012-2h3"/>
+						<path d="M11 5V3l1 1z" fill="#000"/>
+					</svg>
+				</button>
+			</div>
+			<div>
+				<button id="resetBoard" title="Reset board">
+					<svg viewBox="0 0 14 14" stroke-width="2" stroke="#000">
+						<circle cx="7" cy="7" r="5" fill="none" stroke-dasharray="15 3"/>
+						<path d="m2 3v2h2z"/>
+					</svg>
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<dialog id="errorModal">
+		<p>Error</p>
+		<p id="errorText"></p>
+		<div class="buttons">
+			<button id="closeError">Close</button>
+		</div>
+	</dialog>
+
+	<dialog id="settingsModal">
+		<button id="resetSettings" class="reset-button" title="Reset settings">
+			<svg viewBox="0 0 14 14" stroke-width="2" stroke="#000">
+				<circle cx="7" cy="7" r="5" fill="none" stroke-dasharray="15 3"/>
+				<path d="m2 3v2h2z"/>
+			</svg>
+		</button>
+
+		<p>Board image</p>
+
+		<p class="help-text">Upload an image file...</p>
+		<div class="inputs">
+			<input type="file" id="imageFile" accept="image/*">
+		</div>
+		
+		<p class="help-text">... or paste a link to one</p>
+		<div class="inputs">
+			<input type="url" pattern="https?://.*" id="imageLink" placeholder="Image link">
+		</div>
+
+		<p>Tile graphics</p>
+		<div class="inputs">
+			<input id="tileColor1" type="color" value="#dce0c7">
+			<input id="tileColor2" type="color" value="#999c57">
+		</div>
+
+		<div class="inputs">
+			<label><input id="tileNumbers" type="checkbox" checked> Show tile numbers</label>
+		</div>
+
+		<div class="inputs">
+			<input id="numberColor" type="color" value="#ffffff">
+		</div>
+
+		<hr>
+
+		<p>Number of tiles</p>
+
+		<div class="inputs">
+			<input min="2" step="1" type="number" value="4" placeholder="X" id="boardX">
+			<span class="bold label-align">&times;</span>
+			<input min="2" step="1" type="number" value="4" placeholder="Y" id="boardY">
+		</div>
+
+		<hr>
+
+		<div class="buttons">
+			<button class="primary" id="generateBoard">Generate</button>
+			<button id="closeSettings">Cancel</button>
+		</div>
+	</dialog>
+</body>
+<script>
+	"use strict";
+
+	let audioCtx;
+	let buffer;
+	let timeInterval = false;
+	let startTime;
+	let muted = false;
+	let modalOpen = false;
+	let dragAxis = false;
+	let dragDirection;
+	let preventClick = false;
+
+	const canvasFormat = document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp') ? 'image/webp' : 'image/jpeg';
+
+	const dragOrigin = {
+		x: 0,
+		y: 0
+	};
+
+	const config = {
+		boardX: 4,
+		boardY: 4,
+		tileColor1: '#dce0c7',
+		tileColor2: '#999c57',
+		numberColor: '#ffffff',
+		tileNumbers: true,
+		imageFile: null,
+		imageLink: null,
+		seed: null
+	};
+
+	let currentBoard;
+
+	const activeTile = {};
+	const emptyTile = {};
+
+	let moveCount = 0;
+	let boardTime = 0;
+
+	const board = document.getElementById('board');
+	const settingsModal = document.getElementById('settingsModal');
+	const errorModal = document.getElementById('errorModal');
+
+	function setupAudio(event) {
+		if (event.code && event.code !== 'Space') return;
+
+		audioCtx = new AudioContext({
+			latencyHint: 'interactive',
+			sampleRate: 44100
+		});
+
+		if (!buffer) {
+			const bufferSize = audioCtx.sampleRate * 0.25;
+			const newBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+			const data = newBuffer.getChannelData(0);
+
+			for (let i = 0; i < bufferSize; i++) {
+				data[i] = Math.random() * 0.1 - 0.05;
+			}
+
+			const fadeInLength = audioCtx.sampleRate * 0.1;
+			for (let i = 0; i < fadeInLength; i++) {
+				data[i] *= i / fadeInLength;
+			}
+
+			const fadeOutStartIndex = audioCtx.sampleRate * 0.2;
+			for (let i = fadeOutStartIndex; i < bufferSize; i++) {
+				data[i] *= (bufferSize - i) / (bufferSize - fadeOutStartIndex);
+			}
+
+			buffer = newBuffer;
+		}
+
+		document.removeEventListener('click', setupAudio);
+		document.removeEventListener('keydown', setupAudio);
+
+		const filter = audioCtx.createBiquadFilter();
+		filter.type = "lowpass";
+		filter.frequency.value = 1000;
+		filter.connect(audioCtx.destination);
+	}
+
+	function slideSfx() {
+		if (!audioCtx || muted) return;
+
+		const source = audioCtx.createBufferSource();
+		source.buffer = buffer;
+
+		source.connect(audioCtx.destination);
+		source.start();
+		source.stop(audioCtx.currentTime + 0.25);
+	}
+
+	function splitmix32(a) {
+		return () => {
+			a |= 0; a = a + 0x9e3779b9 | 0;
+			let t = a ^ a >>> 16; t = Math.imul(t, 0x21f0aaad);
+			t = t ^ t >>> 15; t = Math.imul(t, 0x735a2d97);
+			return ((t = t ^ t >>> 15) >>> 0) / 4294967296;
+		}
+	}
+
+	function generateBoard(config, boardElm, seed = null) {
+		const maxTile = config.boardX * config.boardY;
+
+		document.getElementById('resetBoard').disabled = true;
+		
+		config.seed = seed || Date.now() * Math.random();
+
+		const prng = splitmix32(config.seed);
+
+		document.documentElement.style.setProperty('--tileSize', `calc(${ 80 / Math.max(config.boardX, config.boardY) }vmin)`);
+		document.documentElement.style.setProperty('--gridCols', config.boardX);
+		document.documentElement.style.setProperty('--tileColor1', config.tileColor1);
+		document.documentElement.style.setProperty('--tileColor2', config.tileColor2);
+		document.documentElement.style.setProperty('--numberColor', config.numberColor);
+
+		const boardData = Array.from({ length: maxTile }, (_, i) => i + 1);
+
+		for (let i = boardData.length - 2; i > 0; i--) {
+			const j = Math.floor(prng() * (i + 1));
+
+			[boardData[i], boardData[j]] = [boardData[j], boardData[i]];
+		}
+
+		let inversions = 0;
+
+		for (let i = boardData.length - 1; i > 0; i--) {
+			for (let j = i - 1; j >= 0; j--) {
+				if (boardData[i] < boardData[j]) inversions++;
+			}
+		}
+
+		if (inversions & 1) {
+			[boardData[0], boardData[1]] = [boardData[1], boardData[0]];
+		}
+
+		if (!inversions || boardData[0] === 1 && boardData[1] === 2) {
+			generateBoard(config, boardElm, config.seed + 1);
+			return;
+		}
+
+		let i = 0;
+		let row;
+		let col;
+
+		boardElm.innerHTML = '';
+		boardElm.classList.remove('solved');
+		boardElm.classList.remove('hide-tiles');
+		boardElm.classList.toggle('show-numbers', config.tileNumbers);
+
+		moveCount = 0;
+		updateMoveCount(moveCount);
+
+		boardTime = 0;
+		clearInterval(timeInterval);
+		timeInterval = false;
+		updateTime(boardTime);
+
+		document.getElementById('stats').classList.add('inactive');
+
+		activeTile.x = config.boardX - 1;
+		activeTile.y = config.boardY - 1;
+		emptyTile.x = config.boardX - 1;
+		emptyTile.y = config.boardY - 1;
+
+		for (let y = 0; y < config.boardY; y++) {
+			for (let x = 0; x < config.boardX; x++) {
+				col = document.createElement('div');
+
+				col.setAttribute('data-empty', 0);
+
+				const oddCheckValue = (config.boardX & 1) ? (boardData[i] - 1) : (Math.floor((boardData[i] - 1) / config.boardX) + (boardData[i] - 1) % config.boardX);
+
+				col.setAttribute('class', oddCheckValue & 1 ? 'odd' : 'even');
+				col.setAttribute('data-x', x);
+				col.setAttribute('data-y', y);
+				col.setAttribute('data-index', boardData[i++]);
+
+				boardElm.appendChild(col);
+			}
+		}
+
+		col.setAttribute('data-empty', 1);
+		col.classList.add('active');
+
+		document.documentElement.style.setProperty('--backgroundImage', 'none');
+		document.documentElement.style.setProperty('--backgroundSize', 0);
+		document.activeElement.blur();
+
+		if (config.imageFile) {
+			const reader = new FileReader();
+
+			reader.onload = e => {
+				setImage(e.target.result);
+			};
+
+			reader.readAsDataURL(config.imageFile);
+		} else if (config.imageLink) {
+			setImage(config.imageLink);
+		}
+
+		currentBoard = {...config};
+
+		delete currentBoard.imageFile;
+
+		if (!currentBoard.imageLink) {
+			delete currentBoard.imageLink;
+		}
+	}
+
+	function move(target, empty, followTile = false) {
+		if ((target.y === empty.y) ^ (target.x === empty.x)) {
+			document.getElementById('resetBoard').disabled = false;
+
+			let start;
+			let end;
+			let selector;
+			let tileIndex;
+			let animation;
+
+			if (target.x === empty.x) {
+				start = empty.y;
+				end = target.y;
+				selector = `[data-x="${ empty.x }"]`;
+			} else {
+				start = empty.x;
+				end = target.x;
+				selector = `[data-y="${ empty.y }"]`;
+			}
+
+			tileIndex = start;
+			const step = start < end ? 1 : -1;
+
+			if (target.x === empty.x) {
+				animation = step === 1 ? [{transform: 'translateY(100%)'}, {transform: 'translateY(0)'}] : [{transform: 'translateY(-100%)'}, {transform: 'translateY(0)'}];
+			} else {
+				animation = step === 1 ? [{transform: 'translateX(100%)'}, {transform: 'translateX(0)'}] : [{transform: 'translateX(-100%)'}, {transform: 'translateX(0)'}];
+			}
+
+			const tiles = board.querySelectorAll(selector);
+			let tileElm = tiles[tileIndex];
+
+			const emptyTileStyle = tileElm.getAttribute('style');
+
+			for (; tileIndex !== end; tileIndex += step) {
+				const nextTile = tiles[tileIndex + step];
+				const style = nextTile.getAttribute('style');
+
+				tileElm.setAttribute('data-empty', 0);
+				tileElm.setAttribute('class', nextTile.getAttribute('class'));
+				tileElm.setAttribute('data-index', nextTile.getAttribute('data-index'));
+				tileElm.setAttribute('style', nextTile.getAttribute('style'));
+
+				if (style) {
+					tileElm.setAttribute('style', style);
+				} else {
+					tileElm.removeAttribute('style');
+				}
+
+				tileElm.animate(animation, 50);
+				
+				tileElm = nextTile;
+			}
+
+			tileElm.setAttribute('data-empty', 1);
+			tileElm.setAttribute('data-index', config.boardX * config.boardY);
+			tileElm.setAttribute('class', tileElm.dataset.index & 1 ? 'odd' : 'even');
+
+			if (emptyTileStyle) {
+				tileElm.setAttribute('style', emptyTileStyle);
+			} else {
+				tileElm.removeAttribute('style');
+			}
+
+			emptyTile.x = target.x;
+			emptyTile.y = target.y;
+
+			moveCount++;
+			updateMoveCount(moveCount);
+
+			if (!timeInterval) {
+				startTime = new Date().getTime();
+
+				document.getElementById('stats').classList.remove('inactive');
+				timeInterval = setInterval(() => {
+					const currentTime = new Date().getTime();
+					boardTime = Math.floor((currentTime - startTime) / 1000);
+					updateTime(boardTime);
+				}, 500);
+			}
+
+			slideSfx();
+
+			if (emptyTile.x === config.boardX - 1 && emptyTile.y === config.boardY - 1) {
+				checkSolution(board);
+			}
+		}
+	}
+
+	function updateTarget(board, target) {
+		board.querySelector('.active')?.classList.remove('active');
+		board.querySelector(`[data-x="${ activeTile.x }"][data-y="${ activeTile.y }"]`)?.classList.add('active');
+	}
+
+	function checkSolution(board) {
+		const elements = board.querySelectorAll('[data-index]');
+
+		for (let i = 0; i < elements.length; i++) {
+			if (i !== elements[i].getAttribute('data-index') - 1) return false;
+		}
+
+		clearInterval(timeInterval);
+
+		activeTile.x = null;
+		activeTile.y = null;
+
+		emptyTile.x = null;
+		emptyTile.y = null;
+
+		board.querySelector('.active').classList.remove('active');
+		board.classList.add('solved');
+
+		document.getElementById('stats').classList.add('inactive');
+
+		if (config.imageLink || config.imageFile) {
+			board.classList.add('hide-tiles');
+		}
+
+		setTimeout(() => {
+			elements[elements.length - 1].setAttribute('data-empty', 0);
+		}, 100);
+	}
+
+	function updateMoveCount(count) {
+		document.getElementById('move-count').textContent = count;
+	}
+
+	function updateTime(seconds) {
+		let hours = Math.floor(seconds / 3600);
+		let minutes = Math.floor((seconds % 3600) / 60);
+		let remainingSeconds = seconds % 60;
+
+		let timeString = '';
+		if (hours > 0) {
+			timeString += `${ hours }:`;
+		}
+		timeString += `${ String(minutes).padStart(2, '0') }:${ String(remainingSeconds).padStart(2, '0') }`;
+
+		document.getElementById('board-time').textContent = timeString;
+	}
+
+	function setImage(image) {
+		const img = new Image();
+		const canvas = document.createElement('canvas');
+		const ctx = canvas.getContext('2d');
+
+		img.crossOrigin = 'anonymous';
+		img.onload = () => {
+			const boardRatio = config.boardX / config.boardY;
+			const vmin = Math.min(window.screen.width, window.screen.height) * 0.8;
+
+			if (boardRatio >= 1) {
+				canvas.width = Math.min(vmin, img.width);
+				canvas.height = canvas.width / config.boardX * config.boardY;
+				document.documentElement.style.setProperty('--backgroundSize', `calc(${ 100 * config.boardX }% + ${ config.boardX - 1 }px) auto`);
+			} else {
+				canvas.height = Math.min(vmin, img.height);
+				canvas.width = canvas.height / config.boardY * config.boardX;
+				document.documentElement.style.setProperty('--backgroundSize', `auto calc(${ 100 * config.boardY }% + ${ config.boardY - 1 }px)`);
+			}
+
+			const r = Math.min(canvas.width / img.width, canvas.height / img.height);
+			let nw = img.width * r,
+				nh = img.height * r,
+				cx, cy, cw, ch, ar = 1;
+
+			if (nw < canvas.width) ar = canvas.width / nw;
+			if (Math.abs(ar - 1) < 1e-14 && nh < canvas.height) ar = canvas.height / nh;
+			nw *= ar;
+			nh *= ar;
+
+			cw = img.width / (nw / canvas.width);
+			ch = img.height / (nh / canvas.height);
+
+			cx = (img.width - cw) * 0.5;
+			cy = (img.height - ch) * 0.5;
+
+			ctx.drawImage(img, cx, cy, cw, ch, 0, 0, canvas.width, canvas.height);
+
+			document.documentElement.style.setProperty('--backgroundImage', `url(${ canvas.toDataURL(canvasFormat, 0.5) }`);
+
+			board.querySelectorAll('[data-index]').forEach(tile => {
+				const index = tile.getAttribute('data-index') - 1;
+				const rowIndex = Math.floor(index / config.boardX);
+				const colIndex = index % config.boardX;
+
+				tile.setAttribute('style', `background-position: calc(-${ 100 * colIndex }% - ${ colIndex }px) calc(-${ 100 * rowIndex }% - ${ rowIndex }px)`);
+			});
+		}
+
+		img.onerror = () => {
+			modalOpen = true;
+			document.getElementById('errorText').textContent = `Your image "${ img.src }" could not be loaded, sorry!`;
+
+			if (config.imageLink) {
+				document.getElementById('errorText').textContent += '\n\nTry downloading the image to your device and then upload it directly'
+			}
+
+			errorModal.showModal();
+		}
+
+		img.src = image;
+	}
+
+	document.getElementById('toggleSound').addEventListener('click', function() {
+		muted = !muted;
+		this.classList.toggle('muted', muted);
+	});
+
+	document.getElementById('resetBoard').addEventListener('click', () => {
+		generateBoard(config, board, config.seed);
+	});
+
+	board.addEventListener('click', e => {
+		if (!preventClick && e.target.matches('[data-index]')) {
+			activeTile.x = parseInt(e.target.dataset.x);
+			activeTile.y = parseInt(e.target.dataset.y);
+			move(activeTile, emptyTile);
+			updateTarget(board, activeTile);
+		}
+	});
+
+	board.addEventListener('pointerover', e => {
+		if (!dragAxis && !preventClick && e.target.matches('[data-index]')) {
+			activeTile.x = parseInt(e.target.dataset.x);
+			activeTile.y = parseInt(e.target.dataset.y);
+
+			updateTarget(board, activeTile);
+		}
+	});
+
+	board.addEventListener('pointerdown', e => {
+		if (!dragAxis && (e.buttons === 1 || e.touches && e.touches.length === 1) && e.target.matches('[data-empty="0"]') && (parseInt(e.target.dataset.x) === emptyTile.x || parseInt(e.target.dataset.y) === emptyTile.y)) {
+			activeTile.x = parseInt(e.target.dataset.x);
+			activeTile.y = parseInt(e.target.dataset.y);
+
+			updateTarget(board, activeTile);
+
+			dragAxis = parseInt(e.target.dataset.x) === emptyTile.x ? 'y' : 'x';
+			dragDirection = emptyTile[dragAxis] < activeTile[dragAxis];
+			dragOrigin.x = e.clientX;
+			dragOrigin.y = e.clientY;
+		}
+	});
+
+	board.addEventListener('contextmenu', e => {
+		e.preventDefault();
+	});
+
+	board.addEventListener('pointermove', e => {
+		if (dragAxis) {			
+			e.preventDefault();
+
+			const distanceX = dragOrigin.x - e.clientX;
+			const distanceY = dragOrigin.y - e.clientY;
+
+			if ((dragAxis === 'x' && (dragDirection && distanceX > 10 || !dragDirection && distanceX < -10)) ||
+				(dragAxis === 'y' && (dragDirection && distanceY > 10 || !dragDirection && distanceY < -10))) {
+				const newActive = {
+					x: emptyTile.x,
+					y: emptyTile.y
+				};
+
+				move(activeTile, emptyTile);
+
+				dragAxis = false;
+				preventClick = true;
+
+				activeTile.x = newActive.x;
+				activeTile.y = newActive.y;
+			}
+		}
+	});
+
+	board.addEventListener('pointerup', e => {
+		if (e.buttons === 0 || e.touches && e.touches.length === 0) {
+			dragAxis = false;
+			preventClick = false;
+		}
+	});
+
+	document.addEventListener('keydown', e => {
+		if (!modalOpen) {
+			switch (e.code) {
+				case 'ArrowLeft':
+					activeTile.x = activeTile.x > 0 ? activeTile.x - 1 : config.boardX - 1;
+					updateTarget(board, activeTile);
+					break;
+				case 'ArrowRight':
+					activeTile.x = activeTile.x < (config.boardX - 1) ? activeTile.x + 1 : 0;
+					updateTarget(board, activeTile);
+					break;
+				case 'ArrowUp':
+					activeTile.y = activeTile.y > 0 ? activeTile.y - 1 : config.boardY - 1;
+					updateTarget(board, activeTile);
+					break;
+				case 'ArrowDown':
+					activeTile.y = activeTile.y < (config.boardY - 1) ? activeTile.y + 1 : 0;
+					updateTarget(board, activeTile);
+					break;
+				case 'Space':
+					move(activeTile, emptyTile);
+					updateTarget(board, activeTile);
+					break;
+			}
+		}
+	});
+
+	document.addEventListener('pointerdown', setupAudio);
+	document.addEventListener('keydown', setupAudio);
+
+	document.getElementById('share').addEventListener('click', () => {
+		const url = window.location.href.split('/index.html')[0].split('?')[0].split('#')[0].replace(/\/$/, '');
+		const queryString = `?b=${ currentBoard.boardX },${ currentBoard.boardY },${ currentBoard.tileColor1.slice(1) },${ currentBoard.tileColor2.slice(1) },${ currentBoard.numberColor.slice(1) },${ currentBoard.tileNumbers ? 1 : 0 },${ currentBoard.seed }${ currentBoard.imageLink ? `,${ currentBoard.imageLink }` : ''}`;
+
+		navigator.clipboard.writeText(`${ url }${ queryString }`);
+
+		const notification = document.createElement('div');
+		notification.textContent = 'Link copied!';
+		notification.setAttribute('class', 'notification');
+		document.body.appendChild(notification);
+		
+		setTimeout(() => {
+			document.body.removeChild(notification);
+		}, 2500);
+	});
+
+	document.getElementById('openSettings').addEventListener('click', () => {
+		settingsModal.showModal();
+		modalOpen = true;
+	});
+
+	document.getElementById('closeSettings').addEventListener('click', () => {
+		settingsModal.close();
+	});
+
+	document.getElementById('generateBoard').addEventListener('click', () => {
+		settingsModal.close();
+		generateBoard(config, board);
+	});
+
+	document.getElementById('closeError').addEventListener('click', () => {
+		errorModal.close();
+	});
+
+	settingsModal.addEventListener('drop', function(e) {
+		e.preventDefault();
+
+		this.classList.remove('drop-prompt');
+
+		const file = e.dataTransfer.files[0];
+
+		if (file && file.type.startsWith('image/')) {
+			document.getElementById('imageLink').value = null;
+			config.imageLink = null;
+
+			document.getElementById('imageFile').files = e.dataTransfer.files;
+			config.imageFile = file;
+		}
+	});
+
+	settingsModal.addEventListener('dragenter', function(e) {
+		if (e.dataTransfer.types.includes('Files')) {
+			this.classList.add('drop-prompt');
+		}
+	});
+
+	settingsModal.addEventListener('dragleave', function(e) {
+		this.classList.remove('drop-prompt');
+	});
+
+	settingsModal.addEventListener('dragover', e => {
+		e.preventDefault();
+	});
+
+	settingsModal.addEventListener('close', () => {
+		modalOpen = false;
+	});
+
+	errorModal.addEventListener('close', () => {
+		modalOpen = false;
+	});
+
+	document.getElementById('resetSettings').addEventListener('click', () => {
+		document.getElementById('imageFile').value = null;
+		document.getElementById('imageLink').value = null;
+		document.getElementById('tileNumbers').checked = true;
+		document.getElementById('boardX').value = 4;
+		document.getElementById('boardY').value = 4;
+		document.getElementById('tileColor1').value = '#dce0c7';
+		document.getElementById('tileColor2').value = '#999c57';
+		document.getElementById('numberColor').value = '#ffffff';
+		document.getElementById('numberColor').disabled = false;
+
+		config.boardX = 4;
+		config.boardY = 4;
+		config.tileColor1 = '#dce0c7';
+		config.tileColor2 = '#999c57';
+		config.numberColor = '#ffffff';
+		config.tileNumbers = true;
+		config.imageFile = null;
+		config.imageLink = null;
+	});
+
+	document.getElementById('imageFile').addEventListener('change', function() {
+		document.getElementById('imageLink').value = null;
+		config.imageLink = null;
+		config.imageFile = this.files[0];
+	});
+
+	document.getElementById('imageLink').addEventListener('change', function() {
+		if (!this.checkValidity()) {
+			this.value = `https://${ this.value }`;
+		}
+
+		document.getElementById('imageFile').value = null;
+		config.imageFile = null;
+		config.imageLink = this.value;
+	});
+
+	document.getElementById('boardX').addEventListener('change', function() {
+		config.boardX = Math.max(2, this.value);
+		this.value = config.boardX;
+	});
+
+	document.getElementById('boardY').addEventListener('change', function() {
+		config.boardY = Math.max(2, this.value);
+		this.value = config.boardY;
+	});
+
+	document.getElementById('tileColor1').addEventListener('change', function() {
+		config.tileColor1 = this.value;
+	});
+
+	document.getElementById('tileColor2').addEventListener('change', function() {
+		config.tileColor2 = this.value;
+	});
+
+	document.getElementById('numberColor').addEventListener('change', function() {
+		config.numberColor = this.value;
+	});
+
+	document.getElementById('tileNumbers').addEventListener('change', function() {
+		config.tileNumbers = this.checked;
+		document.getElementById('numberColor').disabled = !this.checked;
+	});
+
+	function init() {
+		const queryString = window.location.search;
+		const searchParam = new URLSearchParams(queryString).get('b');
+
+		if (searchParam) {
+			const settings = searchParam.split(',', 8);
+
+			settings.forEach((value, index) => {
+				switch (index) {
+					case 0:
+					case 1:
+						const boardKey = index ? 'boardY' : 'boardX';
+
+						if (!isNaN(value) && Number(value) >= 2) {
+							config[boardKey] = value;
+							document.getElementById(boardKey).value = value;
+						}
+						break;
+					case 2:
+					case 3:
+					case 4:
+						const colorKey = index === 2 ? 'tileColor1' : index === 3 ? 'tileColor2' : 'numberColor';
+
+						if (value.match(/[0-9A-F]{6}/i)) {
+							config[colorKey] = `#${ value }`;
+							document.getElementById(colorKey).value = config[colorKey];
+						}
+						break;
+					case 5:
+						config.tileNumbers = value !== '0';
+						document.getElementById('tileNumbers').checked = config.tileNumbers;
+						document.getElementById('numberColor').disabled = !config.tileNumbers;
+						break;
+					case 6:
+						if (!isNaN(value)) {
+							config.seed = value;
+						}
+						break;
+					case 7:
+						config.imageLink = value;
+						document.getElementById('imageLink').value = value;
+						break;
+				}
+			});
+		}
+
+		generateBoard(config, board, config.seed);
+
+		const favicon = [0, 1, 0, 1, 0, 1, 0, 1];
+
+		for (let i = 8; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[favicon[i], favicon[j]] = [favicon[j], favicon[i]];
+		}
+
+		let svg = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 3' fill='%23${ config.tileColor1.slice(1) }'>`;
+		let i = 0;
+
+		for (let y = 0; y < 3; y++) {
+			for (let x = 0; x < 3; x++) {
+				svg += `<rect height='1' width='1'${ favicon[i++] ? '' : ` fill='%23${ config.tileColor2.slice(1) }'`}${ x ? ` x='${ x }'` : '' }${ y ? ` y='${ y }'` : '' }/>`;
+
+				if (i === 8) break;
+			}
+		}
+
+		svg += '</svg>';
+
+		document.querySelector('[rel="shortcut icon"]').setAttribute('href', svg);
+	}
+
+	init();
+</script>
+</html>
