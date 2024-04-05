@@ -27,7 +27,8 @@
 		input,
 		select,
 		option,
-		button {
+		button,
+		kbd {
 			font-family: monospace;
 			font-size: 12px;
 		}
@@ -285,13 +286,14 @@
 			margin: 0;
 			display: inline-grid;
 			place-content: center;
+			padding-right: 8px;
 		}
 
 		.layer-container [type="checkbox"]::before {
 			content: '';
 			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 10'><path fill='none' stroke='%23000' d='M1 5A5 5 0 0010 5'/></svg>");
-			width: 1rem;
-			height: 1rem;
+			width: 22px;
+			height: 20px;
 		}
 
 		.layer-container [type="checkbox"]:checked::before {
@@ -333,6 +335,10 @@
 
 		.controls .buttons {
 			margin-left: 0px;
+		}
+
+		.controls label {
+			vertical-align: top;
 		}
 
 		button {
@@ -416,6 +422,11 @@
 
 		td:first-child {
 			text-align: center;
+			white-space: nowrap;
+		}
+
+		td:last-child {
+			width: 100%;
 		}
 
 		kbd {
@@ -573,6 +584,20 @@
 
 	<dialog id="help-modal">
 		<div>
+			<span class="bold">Controls</span>
+			<table>
+				<tbody>
+					<tr>
+						<td><kbd>Left click</kbd></td>
+						<td>Paint with current pattern</td>
+					</tr>
+					<tr>
+						<td><kbd>Right click</kbd></td>
+						<td>Erase</td>
+					</tr>
+				</tbody>
+			</table>
+
 			<span class="bold">Pattern settings</span>
 			<table>
 				<tbody>
