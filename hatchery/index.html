@@ -1,0 +1,973 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Hatchery</title>
+	<link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><style>@media(prefers-color-scheme:dark){%23b{fill:%23fff}}</style><mask id='a'><path fill='%23fff' d='M3 0h14v20H3z'/><path stroke='%23000' stroke-linecap='round' d='M3 5h8M3 7h6M3 9h8m-8 2h4'/></mask><path id='b' d='M15 11c1 8-11 8-10 0 2-11 8-11 10 0' mask='url(%23a)'/></svg>">
+
+	<style>
+		:root {
+			--current-pattern: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m5 5h4v4h-4'/></svg>");
+			--current-rotate: 0deg;
+			--current-invert: none;
+			--container-scale: 1;
+		}
+
+		body {
+			user-select: none;
+			margin: 0;
+			height: 100vh;
+			display: flex;
+			justify-items: center;
+			align-items: center;
+		}
+
+		body,
+		input,
+		select,
+		option,
+		button {
+			font-family: monospace;
+			font-size: 12px;
+		}
+
+		.container {
+			padding-top: 6px;
+			height: 100%;
+			width: 100%;
+			min-height: 408px;
+			min-width: 408px;
+			display: flex;
+		}
+
+		.grid-container {
+			background: #fff;
+			height: 384px;
+			width: 384px;
+			border: 1px solid #7f7f7f;
+			transform: scale(var(--container-scale));
+			transform-origin: top left;
+		}
+
+		.grid {
+			position: absolute;
+			display: grid;
+			grid-template-columns: repeat(32, 12px);
+			grid-auto-rows: 12px;
+		}
+
+		.grid-cell div {
+			pointer-events: none;
+			position: absolute;
+			top: -1px;
+			left: -1px;
+			height: 14px;
+			width: 14px;
+		}
+
+		[data-onion-skin="1"] .grid-cell div {
+			opacity: .25;
+		}
+
+		[data-onion-skin="1"] .grid-cell [data-invert="1"] {
+			opacity: .75;
+		}
+
+		.grid-cell div:nth-child(1) {
+			z-index: 1;
+		}
+
+		.grid-cell div:nth-child(2) {
+			z-index: 2;
+		}
+
+		.grid-cell div:nth-child(3) {
+			z-index: 3;
+		}
+
+		.grid-cell div:nth-child(4) {
+			z-index: 4;
+		}
+
+		.grid[data-active-layer="0"] .grid-cell div:nth-child(1),
+		.grid[data-active-layer="1"] .grid-cell div:nth-child(2),
+		.grid[data-active-layer="2"] .grid-cell div:nth-child(3),
+		.grid[data-active-layer="3"] .grid-cell div:nth-child(4) {
+			pointer-events: auto;
+			cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='4' height='4'><path fill='%237f7f7f' d='M0 2 2 0 4 2 2 4'/></svg>") 2 2, auto;
+			opacity: 1;
+		}
+
+		.grid.hide-layer-0 .grid-cell div:nth-child(1),
+		.grid.hide-layer-1 .grid-cell div:nth-child(2),
+		.grid.hide-layer-2 .grid-cell div:nth-child(3),
+		.grid.hide-layer-3 .grid-cell div:nth-child(4) {
+			display: none;
+		}
+
+		.grid .grid-cell {
+			position: relative;
+		}
+
+		.grid-cell div:hover {
+			outline: 1px solid #7f7f7f;
+			outline-offset: -1px;
+		}
+
+		.grid-cell div:hover {
+			background: var(--current-pattern) !important;
+			rotate: var(--current-rotate) !important;
+			filter: var(--current-invert) !important;
+			z-index: 5 !important;
+		}
+
+		.grid-cell div[data-rotate="90"] {
+			rotate: 90deg;
+		}
+
+		.grid-cell div[data-rotate="180"] {
+			rotate: 180deg;
+		}
+
+		.grid-cell div[data-rotate="270"] {
+			rotate: 270deg;
+		}
+
+		.grid-cell div[data-invert="true"] {
+			filter: invert(100%);
+		}
+
+		[type="checkbox"] {
+			appearance: none;
+			width: 14px;
+			height: 14px;
+			outline: 2px solid #7f7f7f;
+			cursor: pointer;
+			margin: 0;
+		}
+
+		[type="checkbox"]:hover {
+			opacity: .5;
+		}
+
+		[type="checkbox"]:checked::before {
+			content: '';
+			display: block;
+			width: 14px;
+			height: 14px;
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' height='7' width='7' fill='none' stroke='%237f7f7f'><path d='M1 1 6 6M1 6 6 1'/></svg>");
+			background-size: 100%;
+		}
+
+		.pattern-palette input {
+			appearance: none;
+			background-color: #fff !important;
+			display: inline-block;
+			height: 14px;
+			width: 14px;
+			margin: 0;
+			rotate: var(--current-rotate);
+			filter: var(--current-invert);
+			cursor: pointer;
+		}
+
+		.pattern-palette input:checked {
+			outline: 2px solid #7f7f7f;
+		}
+
+		.pattern-palette input:hover {
+			opacity: .5;
+		}
+
+		[data-pattern="0"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m5 5h4v4h-4'/></svg>");
+		}
+
+		[data-pattern="1"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m0 1 1-1 13 13-1 1'/></svg>");
+		}
+
+		[data-pattern="2"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 6h12v2h-12'/></svg>");
+		}
+
+		[data-pattern="3"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m5 1h-4v4'/></svg>");
+		}
+
+		[data-pattern="0"][data-density="1"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m3 3h8v8h-8'/></svg>");
+		}
+
+		[data-pattern="1"][data-density="1"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m0 7 1-1 7 7-1 1m-1-13 1-1 7 7-1 1'/></svg>");
+		}
+
+		[data-pattern="2"][data-density="1"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 3h12v2h-12m0 4h12v2h-12'/></svg>");
+		}
+
+		[data-pattern="3"][data-density="1"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m9 1h-8v8'/></svg>");
+		}
+
+		[data-pattern="0"][data-density="2"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 1h12v12h-12'/></svg>");
+		}
+
+		[data-pattern="1"][data-density="2"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m0 7 1-1 7 7-1 1m-7-13 1-1 13 13-1 1m-7-13 1-1 7 7-1 1'/></svg>");
+		}
+
+		[data-pattern="2"][data-density="2"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 2h12v2h-12m0 2h12v2h-12m0 2h12v2h-12'/></svg>");
+		}
+
+		[data-pattern="3"][data-density="2"] {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m13 1h-12v12'/></svg>");
+		}
+
+		.pattern-palette {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 6px;
+			width: min-content;
+			margin-bottom: 4px;
+		}
+
+		.layer-container {
+			display: flex;
+			flex-direction: column;
+			margin-bottom: 4px;
+		}
+
+		.layer-container > div {
+			display: inline-flex;
+			margin: 2px;
+		}
+
+		.layer-container input {
+			cursor: pointer;
+			outline: none;
+		}
+
+		.layer-container input:hover {
+			opacity: .5;
+		}
+
+		.layer-container .active {
+			outline: 2px solid #7f7f7f;
+		}
+
+		.layer-container [type="radio"] {
+			appearance: none;
+			background-color: transparent;
+			display: inline-grid;
+			place-content: center;
+			display: inline-block;
+			width: 100%;
+			margin: 0;
+		}
+
+		.layer-container [type="radio"]:checked {
+			font-weight: bold;
+		}
+
+		.layer-container [type="radio"]::before {
+			content: attr(data-label);
+			height: 1rem;
+		}
+
+		.layer-container [type="checkbox"] {
+			appearance: none;
+			background-color: transparent;
+			margin: 0;
+			display: inline-grid;
+			place-content: center;
+		}
+
+		.layer-container [type="checkbox"]::before {
+			content: '';
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 10'><path fill='none' stroke='%23000' d='M1 5A5 5 0 0010 5'/></svg>");
+			width: 1rem;
+			height: 1rem;
+		}
+
+		.layer-container [type="checkbox"]:checked::before {
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 10'><path fill='none' stroke='%23000' d='M1 5a5 5 0 0 0 9 0 5 5 0 0 0-9 0Zm3 0a1 1 0 0 0 3 0 1 1 0 0 0-3 0'/></svg>");
+		}
+
+		.controls {
+			width: 152px;
+			min-width: 152px;
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+			padding: 0 6px;
+			gap: 24px;
+			overflow-x: scroll;
+		}
+
+		.controls > div:first-child {
+			margin-top: 6px;
+		}
+
+		.controls > div:last-child {
+			margin-bottom: 6px;
+		}
+
+		.controls > div {
+			margin-left: 12px;
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+
+		.controls > div > label {
+			font-weight: bold;
+			display: block;
+			margin-left: -12px;
+			margin-bottom: 6px;
+		}
+
+		.controls .buttons {
+			margin-left: 0px;
+		}
+
+		button {
+			width: 100%;
+			background: #fff;
+			border: 2px solid #7f7f7f;
+			border-radius: 0;
+			cursor: pointer;
+		}
+
+		button:last-child {
+			margin-top: 8px;
+		}
+
+		button:hover {
+			opacity: .5;
+		}
+
+		datalist {
+			display: flex;
+			justify-content: space-between;
+			margin-left: -.5ch;
+			width: 16ch;
+		}
+
+		datalist option {
+			padding-top: 2px;
+			padding-bottom: 0;
+			margin: 0;
+			width: 3ch;
+			text-align: center;
+			position: relative;
+		}
+
+		datalist option::after {
+			content: '';
+			display: block;
+			position: absolute;
+			width: 1px;
+			height: 6px;
+			background-color: #7f7f7f;
+			top: -4px;
+			left: 50%;
+		}
+
+		dialog {
+			border: none;
+			border-radius: 0;
+			padding: 0;
+		}
+
+		dialog div {
+			border: 2px solid #7f7f7f;
+			padding: 8px;
+		}
+
+		dialog:focus {
+			outline: none;
+		}
+
+		dialog::backdrop {
+			background-color: #0008;
+		}
+
+		.bold {
+			font-weight: bold;
+		}
+
+		table {
+			margin-top: 4px;
+			border-collapse: collapse;
+			border: 1px solid #7f7f7f;
+			margin-bottom: 12px;
+			width: 100%;
+		}
+
+		td {
+			border: 1px solid #7f7f7f;
+			padding: 4px;
+		}
+
+		td:first-child {
+			text-align: center;
+		}
+
+		kbd {
+			padding: 0 2px;
+			height: 1rem;
+			display: inline-block;
+			border: 2px solid #7f7f7f;
+			font-weight: bold;
+		}
+
+		input[type="range"] {
+		  -webkit-appearance: none;
+		  appearance: none;
+		  background: transparent;
+		  cursor: pointer;
+		  margin: 2px 0;
+		  width: 15ch;
+		}
+
+		input[type="range"]:focus {
+		  outline: none;
+		}
+
+		input[type="range"]::-webkit-slider-runnable-track {
+		  background-color: #7f7f7f;
+		  border-radius: 0px;
+		  height: 2px;
+		}
+
+		input[type="range"]::-webkit-slider-thumb {
+		  -webkit-appearance: none; /* Override default look */
+		  appearance: none;
+		  margin-top: -7px; /* Centers thumb on the track */
+		  background-color: #fff;
+		  border-radius: 50%;
+		  height: 16px;
+		  width: 16px;
+		  border: 2px solid #7f7f7f;
+		}
+
+		input[type="range"]::-moz-range-track {
+		  background-color: #7f7f7f;
+		  border-radius: 0px;
+		  height: 2px;
+		}
+
+		input[type="range"]::-moz-range-thumb {
+		  background-color: #fff;
+		  border-radius: 50%;
+		  height: 12px;
+		  width: 12px;
+		  border: 2px solid #7f7f7f;
+		}
+	</style>
+</head>
+<body>
+	<div class="controls" id="controls">
+		<div>
+			<label>Pattern</label>
+			<div id="patterns" class="pattern-palette">
+				<input autocomplete="off" name="pattern" value="0" type="radio" checked data-pattern="0" data-density="0">
+				<input autocomplete="off" name="pattern" value="1" type="radio" data-pattern="1" data-density="0">
+				<input autocomplete="off" name="pattern" value="2" type="radio" data-pattern="2" data-density="0">
+				<input autocomplete="off" name="pattern" value="3" type="radio" data-pattern="3" data-density="0">
+
+				<input autocomplete="off" name="pattern" value="0" type="radio" data-pattern="0" data-density="1">
+				<input autocomplete="off" name="pattern" value="1" type="radio" data-pattern="1" data-density="1">
+				<input autocomplete="off" name="pattern" value="2" type="radio" data-pattern="2" data-density="1">
+				<input autocomplete="off" name="pattern" value="3" type="radio" data-pattern="3" data-density="1">
+
+				<input autocomplete="off" name="pattern" value="0" type="radio" data-pattern="0" data-density="2">
+				<input autocomplete="off" name="pattern" value="1" type="radio" data-pattern="1" data-density="2">
+				<input autocomplete="off" name="pattern" value="2" type="radio" data-pattern="2" data-density="2">
+				<input autocomplete="off" name="pattern" value="3" type="radio" data-pattern="3" data-density="2">
+			</div>
+
+			<div>
+				<input id="invert" type="checkbox">
+				<label for="invert"><u>I</u>nvert</label>
+			</div>
+			
+			<div>
+				<label for="rotate"><u>R</u>otate</label>
+				<div>
+					<input id="rotate" type="range" value="0" step="90" min="0" max="270" list="rotate-ticks">
+					<datalist id="rotate-ticks">
+						<option value="0" label="0"></option>
+						<option value="90" label="90"></option>
+						<option value="180" label="180"></option>
+						<option value="270" label="270"></option>
+					</datalist>
+				</div>
+			</div>
+		</div>
+
+		<div>
+			<label>Randomize</label>
+			<div>
+				<input id="r-pattern" type="checkbox">
+				<label for="r-pattern">Pattern</label>
+			</div>
+			<div>
+				<input id="r-invert" type="checkbox">
+				<label for="r-invert">Invert</label>
+			</div>
+			<div>
+				<input id="r-density" type="checkbox">
+				<label for="r-density">Density</label>
+			</div>
+			<div>
+				<input id="r-rotate" type="checkbox">
+				<label for="r-rotate">Rotate</label>
+			</div>
+		</div>
+
+		<div>
+			<label>Layers</label>
+			<div id="layers" class="layer-container">
+				<div class="active">
+					<input autocomplete="off" name="layer" value="0" data-label="Layer 1" type="radio" checked>
+					<input autocomplete="off" value="0" class="layer-visibility" type="checkbox" checked>
+				</div>
+				<div>
+					<input autocomplete="off" name="layer" value="1" data-label="Layer 2" type="radio">
+					<input autocomplete="off" value="1" class="layer-visibility" type="checkbox" checked>
+				</div>
+				<div>
+					<input autocomplete="off" name="layer" value="2" data-label="Layer 3" type="radio">
+					<input autocomplete="off" value="2" class="layer-visibility" type="checkbox" checked>
+				</div>
+				<div>
+					<input autocomplete="off" name="layer" value="3" data-label="Layer 4" type="radio">
+					<input autocomplete="off" value="3" class="layer-visibility" type="checkbox" checked>
+				</div>
+			</div>
+
+			<div>
+				<input id="onion-skin" type="checkbox">
+				<label for="onion-skin"><u>O</u>nion skin</label>
+			</div>
+		</div>
+
+		<div class="buttons">
+			<button id="save_png">Save PNG</button>
+			<button id="save_svg">Save SVG</button>
+			<button id="help"><u>H</u>elp</button>
+		</div>
+	</div>
+	<div class="container">
+		<div id="grid-container" class="grid-container">
+			<div id="grid" class="grid" data-active-layer="0" data-onion-skin="0">
+			</div>
+		</div>
+	</div>
+
+	<dialog id="help-modal">
+		<div>
+			<span class="bold">Pattern settings</span>
+			<table>
+				<tbody>
+					<tr>
+						<td><kbd>1</kbd> - <kbd>4</kbd></td>
+						<td>Set pattern type</td>
+					</tr>
+					<tr>
+						<td><kbd>D</kbd></td>
+						<td>Set pattern density</td>
+					</tr>
+					<tr>
+						<td><kbd>I</kbd></td>
+						<td>Toggle inverted pattern color</td>
+					</tr>
+					<tr>
+						<td><kbd>R</kbd></td>
+						<td>Set pattern rotation</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<span class="bold">Layer settings</span>
+			<table>
+				<tbody>
+					<tr>
+						<td><kbd>Shift</kbd> + <kbd>1</kbd> - <kbd>4</kbd></td>
+						<td>Set active layer</td>
+					</tr>
+					<tr>
+						<td><kbd>Ctrl</kbd> + <kbd>1</kbd> - <kbd>4</kbd></td>
+						<td>Toggle layer visibility</td>
+					</tr>
+					<tr>
+						<td><kbd>O</kbd></td>
+						<td>Toggle layer onion skin effect</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<button id="close-modal">Close</button>
+		</div>
+	</dialog>
+
+	<script>
+		const gridContainer = document.getElementById('grid-container');
+		let mode = null;
+
+		const brush = {
+			pattern: 0,
+			invert: false,
+			density: 0,
+			rotate: 0
+		};
+
+		const randomize = {
+			pattern: false,
+			invert: false,
+			density: false,
+			rotate: false
+		};
+
+		const patterns = [
+			[
+				'm5 5h4v4h-4',
+				'm0 1 1-1 13 13-1 1',
+				'm1 6h12v2h-12',
+				'm5 1h-4v4'
+			],
+			[
+				'm3 3h8v8h-8',
+				'm0 7 1-1 7 7-1 1m-1-13 1-1 7 7-1 1',
+				'm1 3h12v2h-12m0 4h12v2h-12',
+				'm9 1h-8v8'
+			],
+			[
+				'm1 1h12v12h-12',
+				'm0 7 1-1 7 7-1 1m-7-13 1-1 13 13-1 1m-7-13 1-1 7 7-1 1',
+				'm1 2h12v2h-12m0 2h12v2h-12m0 2h12v2h-12',
+				'm13 1h-12v12'
+			]
+		];
+
+		function initGrid() {
+			const grid = document.getElementById('grid');
+			const gridCell = document.createElement('div');
+
+			gridCell.className = 'grid-cell';
+
+			gridCell.appendChild(document.createElement('div'));
+			gridCell.appendChild(document.createElement('div'));
+			gridCell.appendChild(document.createElement('div'));
+			gridCell.appendChild(document.createElement('div'));
+
+			for (let i = 0; i < 1024; i++) {
+				grid.appendChild(gridCell.cloneNode(true));
+			}
+
+			document.documentElement.style.setProperty('--container-scale', Math.max(Math.floor((Math.min(window.innerHeight, window.innerWidth) - 151) / 386), 1));
+		}
+
+		function randomInt(min, max) {
+			return Math.floor(Math.random() * (max - min) + min);
+		}
+
+		function paintCell(target) {
+			if (mode === 'paint') {
+				target.dataset.pattern = randomize.pattern ? (randomInt(0, 4)) : brush.pattern;
+				target.dataset.invert = randomize.invert ? (Math.random() < 0.5) : brush.invert;
+				target.dataset.density = randomize.density ? (randomInt(0, 3)) : brush.density;
+				target.dataset.rotate = randomize.rotate ? (randomInt(0, 4) * 90) : brush.rotate;
+			} else if (mode === 'erase') {
+				target.removeAttribute('data-pattern');
+				target.removeAttribute('data-invert');
+				target.removeAttribute('data-density');
+				target.removeAttribute('data-rotate');
+			}
+		}
+
+		function setPattern(newPattern) {
+			document.documentElement.style.setProperty('--current-pattern', `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='${ newPattern }'/></svg>"`);
+		}
+
+		function save_png() {
+			const canvas = document.createElement('canvas');
+			canvas.width = 384;
+			canvas.height = 384;
+			const ctx = canvas.getContext('2d', {alpha: false});
+			ctx.imageSmoothingEnabled = false;
+
+			ctx.fillStyle = '#fff';
+			ctx.fillRect(0, 0, 384, 384);
+
+			for (let i = 1; i <= 4; i++) {
+				const cells = document.getElementById('grid').querySelectorAll(`.grid-cell div:nth-child(${ i })`);
+				const cellsLength = cells.length;
+
+				for (let j = 0; j < 1024; j++) {
+					const cell = cells[j];
+
+					if (!cell.dataset.pattern) continue;
+
+					const x = ((j % 32) * 12) - 1;
+					const y = ((Math.floor(j / 32)) * 12) - 1;
+
+					ctx.setTransform(1, 0, 0, 1, 0, 0);
+					ctx.translate(x, y);
+					ctx.rotate(cell.dataset.rotate * Math.PI / 180);
+
+					switch (cell.dataset.rotate) {
+						case '90':
+							ctx.translate(0, -14);
+							break;
+						case '180':
+							ctx.translate(-14, -14);
+							break;
+						case '270':
+							ctx.translate(-14, 0);
+							break;
+					}
+
+					if (cell.dataset.invert === 'true') {
+						ctx.fillStyle = '#fff';
+					} else {
+						ctx.fillStyle = '#000';
+					}
+
+					ctx.fill(new Path2D(patterns[cell.dataset.density][cell.dataset.pattern]));
+				}
+			}
+
+			canvas.toBlob(blob => {
+				const currentDate = new Date().toISOString().slice(0, 10);
+				const link = document.createElement('a');
+
+				link.href = URL.createObjectURL(blob);
+				link.download = `hatchery_${ currentDate }.png`;
+
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+			});
+		}
+
+		function save_svg() {
+			const svgElm = document.createElement('svg');
+			svgElm.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+			svgElm.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+			svgElm.setAttribute('viewBox', '0 0 384 384');
+
+			const defs = document.createElement('defs');
+
+			patterns.flat().forEach((pattern, index) => {
+				const patternDef = document.createElement('path');
+				patternDef.id = `p${ index }`;
+				patternDef.setAttribute('d', pattern);
+
+				defs.appendChild(patternDef);
+			});
+
+			svgElm.appendChild(defs);
+
+			const bg = document.createElement('path');
+			bg.setAttribute('d', 'M0 0H384V384H0');
+			bg.setAttribute('fill', '#fff');
+			svgElm.appendChild(bg);
+
+			const group = document.createElement('g');
+			group.setAttribute('transform', 'translate(-1 -1)');
+
+			for (let i = 1; i <= 4; i++) {
+				const cells = document.getElementById('grid').querySelectorAll(`.grid-cell div:nth-child(${ i })`);
+				const cellsLength = cells.length;
+
+				for (let j = 0; j < 1024; j++) {
+					const cell = cells[j];
+
+					if (!cell.dataset.pattern) continue;
+
+					const use = document.createElement('use');
+					use.setAttribute('xlink:href', `#p${ (parseInt(cell.dataset.density) * 4) + parseInt(cell.dataset.pattern) }`);
+
+					const x = (j % 32) * 12;
+					const y = (Math.floor(j / 32)) * 12;
+
+					if (cell.dataset.rotate > 0) {
+						use.setAttribute('transform', `rotate(${ cell.dataset.rotate } ${ x + 7 } ${ y + 7 })`);
+					}
+
+					if (cell.dataset.invert === 'true') {
+						use.setAttribute('fill', '#fff');
+					}
+
+					use.setAttribute('x', x);
+					use.setAttribute('y', y);
+
+					group.appendChild(use);
+				}
+			}
+
+			svgElm.appendChild(group);
+
+			var svgUrl = URL.createObjectURL(new Blob([svgElm.outerHTML], {type: "image/svg+xml;charset=utf-8"}));
+
+			const currentDate = new Date().toISOString().slice(0, 10);
+			const link = document.createElement("a");
+
+			link.href = svgUrl;
+			link.download = `hatchery_${ currentDate }.svg`;
+
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+		}
+
+		gridContainer.addEventListener('mousedown', e => {
+			if (e.button === 0) {
+				mode = 'paint';
+				paintCell(e.target);
+			} else if (e.button === 2) {
+				e.preventDefault();
+				mode = 'erase';
+				paintCell(e.target);
+			} else {
+				mode = null;
+			}
+		});
+
+		document.addEventListener('mouseup', e => {
+			mode = null;
+		});
+
+		window.addEventListener('resize', e => {
+			document.documentElement.style.setProperty('--container-scale', Math.max(Math.floor((Math.min(window.innerHeight, window.innerWidth) - 151) / 386), 1));
+		}, {
+			passive: true
+		});
+
+		document.getElementById('help-modal').addEventListener('click', e => {
+			if (!e.target.closest('div')) {
+				e.target.close();
+			}
+		})
+
+		document.addEventListener('keydown', e => {
+			if (e.code.startsWith('Digit')) {
+				const number = e.code.slice(5) - 1;
+
+				if (e.shiftKey) {
+					document.querySelector(`#layers [type="radio"][value="${ number }"]`)?.click();
+				} else if (e.ctrlKey) {
+					document.querySelector(`#layers [type="checkbox"][value="${ number }"]`)?.click();
+				} else {
+					document.querySelector(`#patterns [data-pattern="${ number }"][data-density="${ brush.density }"]`)?.click();
+				}
+			} else if (e.code === 'KeyI') {
+				document.getElementById('invert').click();
+			} else if (e.code === 'KeyD') {
+				brush.density++;
+
+				if (brush.density > 2) {
+					brush.density = 0;
+				}
+
+				document.querySelector(`#patterns [data-pattern="${ brush.pattern }"][data-density="${ brush.density }"]`)?.click();
+			} else if (e.code === 'KeyR') {
+				brush.rotate += 90;
+
+				if (brush.rotate > 270) {
+					brush.rotate = 0;
+				}
+
+				document.documentElement.style.setProperty('--current-rotate', `${ brush.rotate }deg`);
+				document.getElementById('rotate').value = brush.rotate;
+			} else if (e.code === 'KeyO') {
+				document.getElementById('onion-skin').click();
+			} else if (e.code === 'KeyH') {
+				document.getElementById('help').click();
+			}
+		});
+
+		gridContainer.addEventListener('contextmenu', e => {
+			e.preventDefault();
+		});
+
+		gridContainer.addEventListener('mouseover', e => {
+			if (mode) {
+				paintCell(e.target);
+			}
+		});
+
+		document.getElementById('help').addEventListener('click', e => {
+			document.getElementById('help-modal').showModal();
+		});
+
+		document.getElementById('invert').addEventListener('change', e => {
+			brush.invert = e.target.checked;
+			document.documentElement.style.setProperty('--current-invert', brush.invert ? 'invert(100%)' : 'none');
+		});
+
+		document.getElementById('onion-skin').addEventListener('change', e => {
+			document.getElementById('grid').dataset.onionSkin = parseInt(document.getElementById('grid').dataset.onionSkin) ? 0 : 1;
+		});
+
+		document.getElementById('patterns').addEventListener('click', e => {
+			if (e.target.dataset.pattern) {
+				brush.pattern = parseInt(e.target.dataset.pattern);
+				brush.density = parseInt(e.target.dataset.density);
+				setPattern(patterns[brush.density][brush.pattern]);
+			}
+		});
+
+		document.getElementById('rotate').addEventListener('change', e => {
+			brush.rotate = e.target.value;
+			document.documentElement.style.setProperty('--current-rotate', `${ brush.rotate }deg`);
+		});
+
+		document.getElementById('layers').addEventListener('click', function(e) {
+			if (e.target.type === 'radio') {
+				this.querySelector('.active')?.classList.remove('active');
+				this.children[e.target.value]?.classList.add('active');
+				document.getElementById('grid').dataset.activeLayer = e.target.value;
+			} else if (e.target.type === 'checkbox') {
+				document.getElementById('grid').classList.toggle(`hide-layer-${ e.target.value }`, !e.target.checked);
+			}
+		});
+
+		document.querySelectorAll('[type="checkbox"]').forEach(elm => {
+			elm.checked = elm.matches('.layer-visibility');
+		});
+
+		document.getElementById('r-pattern').addEventListener('change', e => {
+			randomize.pattern = e.target.checked;
+		});
+
+		document.getElementById('r-invert').addEventListener('change', e => {
+			randomize.invert = e.target.checked;
+		});
+
+		document.getElementById('r-density').addEventListener('change', e => {
+			randomize.density = e.target.checked;
+		});
+
+		document.getElementById('r-rotate').addEventListener('change', e => {
+			randomize.rotate = e.target.checked;
+		});
+
+		document.getElementById('close-modal').addEventListener('click', e => {
+			document.getElementById('help-modal').close();
+		});
+
+		document.getElementById('save_png').addEventListener('click', save_png);
+		document.getElementById('save_svg').addEventListener('click', save_svg);
+
+		initGrid();
+	</script>
+</body>
+</html> 
