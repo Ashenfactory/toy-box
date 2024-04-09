@@ -9,9 +9,10 @@
 	<style>
 		:root {
 			--current-pattern: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m5 5h4v4h-4'/></svg>");
-			--current-rotate: 0deg;
+			--current-angle: 0deg;
 			--current-invert: none;
 			--container-scale: 1;
+			--background-color: #fff;
 		}
 
 		body {
@@ -43,7 +44,7 @@
 		}
 
 		.grid-container {
-			background: #fff;
+			background: var(--background-color);
 			height: 384px;
 			width: 384px;
 			border: 1px solid #7f7f7f;
@@ -67,11 +68,11 @@
 			width: 14px;
 		}
 
-		[data-onion-skin="1"] .grid-cell div {
+		.grid.onion-skin .grid-cell div {
 			opacity: .25;
 		}
 
-		[data-onion-skin="1"] .grid-cell [data-invert="1"] {
+		.grid.onion-skin .grid-cell [data-invert="1"] {
 			opacity: .75;
 		}
 
@@ -107,6 +108,19 @@
 			display: none;
 		}
 
+		.grid.gridlines::after {
+			content: '';
+			display: block;
+			pointer-events: none;
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			top: 0;
+			left: 0;
+			z-index: 1;
+			background: url("data: image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><path stroke='%237f7f7f' stroke-opacity='.5' fill='none' d='M0 12H12V0'/></svg>");
+		}
+
 		.grid .grid-cell {
 			position: relative;
 		}
@@ -118,24 +132,24 @@
 
 		.grid-cell div:hover {
 			background: var(--current-pattern) !important;
-			rotate: var(--current-rotate) !important;
+			rotate: var(--current-angle) !important;
 			filter: var(--current-invert) !important;
 			z-index: 5 !important;
 		}
 
-		.grid-cell div[data-rotate="90"] {
+		[data-angle="90"] {
 			rotate: 90deg;
 		}
 
-		.grid-cell div[data-rotate="180"] {
+		[data-angle="180"] {
 			rotate: 180deg;
 		}
 
-		.grid-cell div[data-rotate="270"] {
+		[data-angle="270"] {
 			rotate: 270deg;
 		}
 
-		.grid-cell div[data-invert="true"] {
+		[data-invert="1"] {
 			filter: invert(100%);
 		}
 
@@ -168,7 +182,7 @@
 			height: 14px;
 			width: 14px;
 			margin: 0;
-			rotate: var(--current-rotate);
+			rotate: var(--current-angle);
 			filter: var(--current-invert);
 			cursor: pointer;
 		}
@@ -179,6 +193,29 @@
 
 		.pattern-palette input:hover {
 			opacity: .5;
+		}
+
+		.pattern-palette .preset-container input {
+			background-color: #7f7f7f !important;
+		}
+
+		.preset-container {
+			position: relative;
+		}
+
+		.preset-container .preset-display,
+		.preset-display div {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 14px;
+			height: 14px;
+		}
+
+		.preset-display {
+			pointer-events: none;
+			rotate: var(--current-angle);
+			filter: var(--current-invert);
 		}
 
 		[data-pattern="0"] {
@@ -237,31 +274,31 @@
 			margin-bottom: 4px;
 		}
 
-		.layer-container {
+		.radio-container {
 			display: flex;
 			flex-direction: column;
 			margin-bottom: 4px;
 		}
 
-		.layer-container > div {
+		.radio-container > div {
 			display: inline-flex;
 			margin: 2px;
 		}
 
-		.layer-container input {
+		.radio-container input {
 			cursor: pointer;
 			outline: none;
 		}
 
-		.layer-container input:hover {
+		.radio-container input:hover {
 			opacity: .5;
 		}
 
-		.layer-container .active {
+		.radio-container .active {
 			outline: 2px solid #7f7f7f;
 		}
 
-		.layer-container [type="radio"] {
+		.radio-container [type="radio"] {
 			appearance: none;
 			background-color: transparent;
 			display: inline-grid;
@@ -271,16 +308,17 @@
 			margin: 0;
 		}
 
-		.layer-container [type="radio"]:checked {
+		.radio-container [type="radio"]:checked {
 			font-weight: bold;
 		}
 
-		.layer-container [type="radio"]::before {
+		.radio-container [type="radio"]::before {
 			content: attr(data-label);
+			display: block;
 			height: 1rem;
 		}
 
-		.layer-container [type="checkbox"] {
+		.radio-container [type="checkbox"] {
 			appearance: none;
 			background-color: transparent;
 			margin: 0;
@@ -289,14 +327,14 @@
 			padding-right: 8px;
 		}
 
-		.layer-container [type="checkbox"]::before {
+		.radio-container [type="checkbox"]::before {
 			content: '';
 			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 10'><path fill='none' stroke='%23000' d='M1 5A5 5 0 0010 5'/></svg>");
 			width: 22px;
 			height: 20px;
 		}
 
-		.layer-container [type="checkbox"]:checked::before {
+		.radio-container [type="checkbox"]:checked::before {
 			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 10'><path fill='none' stroke='%23000' d='M1 5a5 5 0 0 0 9 0 5 5 0 0 0-9 0Zm3 0a1 1 0 0 0 3 0 1 1 0 0 0-3 0'/></svg>");
 		}
 
@@ -393,6 +431,7 @@
 		dialog div {
 			border: 2px solid #7f7f7f;
 			padding: 8px;
+			max-width: 408px;
 		}
 
 		dialog:focus {
@@ -421,6 +460,7 @@
 		}
 
 		td:first-child {
+			vertical-align: baseline;
 			text-align: center;
 			white-space: nowrap;
 		}
@@ -438,53 +478,71 @@
 		}
 
 		input[type="range"] {
-		  -webkit-appearance: none;
-		  appearance: none;
-		  background: transparent;
-		  cursor: pointer;
-		  margin: 2px 0;
-		  width: 15ch;
+			appearance: none;
+			background: transparent;
+			cursor: pointer;
+			margin: 2px 0;
+			width: 15ch;
 		}
 
 		input[type="range"]:focus {
-		  outline: none;
+			outline: none;
 		}
 
 		input[type="range"]::-webkit-slider-runnable-track {
-		  background-color: #7f7f7f;
-		  border-radius: 0px;
-		  height: 2px;
+			background-color: #7f7f7f;
+			border-radius: 0px;
+			height: 2px;
 		}
 
 		input[type="range"]::-webkit-slider-thumb {
-		  -webkit-appearance: none; /* Override default look */
-		  appearance: none;
-		  margin-top: -7px; /* Centers thumb on the track */
-		  background-color: #fff;
-		  border-radius: 50%;
-		  height: 16px;
-		  width: 16px;
-		  border: 2px solid #7f7f7f;
+			appearance: none;
+			margin-top: -7px;
+			background-color: #fff;
+			border-radius: 50%;
+			height: 16px;
+			width: 16px;
+			border: 2px solid #7f7f7f;
 		}
 
 		input[type="range"]::-moz-range-track {
-		  background-color: #7f7f7f;
-		  border-radius: 0px;
-		  height: 2px;
+			background-color: #7f7f7f;
+			border-radius: 0px;
+			height: 2px;
 		}
 
 		input[type="range"]::-moz-range-thumb {
-		  background-color: #fff;
-		  border-radius: 50%;
-		  height: 12px;
-		  width: 12px;
-		  border: 2px solid #7f7f7f;
+			background-color: #fff;
+			border-radius: 50%;
+			height: 12px;
+			width: 12px;
+			border: 2px solid #7f7f7f;
+		}
+
+		#shape-preview {
+			stroke: #7f7f7f;
+			fill: none;
+			overflow: visible;
+			pointer-events: none;
 		}
 	</style>
 </head>
 <body>
 	<div class="controls" id="controls">
 		<div>
+			<label>Tool</label>
+			<div id="tools" class="radio-container">
+				<div class="active">
+					<input type="radio" name="tool" data-label="B̲rush" value="brush" checked>
+				</div>
+				<div>
+					<input type="radio" name="tool" data-label="R̲ectangle" value="rectangle">
+				</div>
+				<div>
+					<input type="radio" name="tool" data-label="C̲opy to preset" value="copy">
+				</div>
+			</div>
+
 			<label>Pattern</label>
 			<div id="patterns" class="pattern-palette">
 				<input autocomplete="off" name="pattern" value="0" type="radio" checked data-pattern="0" data-density="0">
@@ -504,15 +562,58 @@
 			</div>
 
 			<div>
+				<label>Presets</label>
+
+				<div id="presets" class="pattern-palette">
+					<div class="preset-container">
+						<input autocomplete="off" name="pattern" value="0" type="radio">
+						<div class="preset-display">
+							<div></div>
+							<div></div>
+							<div></div>
+							<div></div>
+						</div>
+					</div>
+					<div class="preset-container">
+						<input autocomplete="off" name="pattern" value="1" type="radio">
+						<div class="preset-display">
+							<div></div>
+							<div></div>
+							<div></div>
+							<div></div>
+						</div>
+					</div>
+					<div class="preset-container">
+						<input autocomplete="off" name="pattern" value="2" type="radio">
+						<div class="preset-display">
+							<div></div>
+							<div></div>
+							<div></div>
+							<div></div>
+						</div>
+					</div>
+					<div class="preset-container">
+						<input autocomplete="off" name="pattern" value="3" type="radio">
+						<div class="preset-display">
+							<div></div>
+							<div></div>
+							<div></div>
+							<div></div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div>
 				<input id="invert" type="checkbox">
-				<label for="invert"><u>I</u>nvert</label>
+				<label for="invert">I̲nvert color</label>
 			</div>
 			
 			<div>
-				<label for="rotate"><u>R</u>otate</label>
+				<label for="angle">A̲ngle</label>
 				<div>
-					<input id="rotate" type="range" value="0" step="90" min="0" max="270" list="rotate-ticks">
-					<datalist id="rotate-ticks">
+					<input id="angle" type="range" value="0" step="90" min="0" max="270" list="angle-ticks">
+					<datalist id="angle-ticks">
 						<option value="0" label="0"></option>
 						<option value="90" label="90"></option>
 						<option value="180" label="180"></option>
@@ -525,26 +626,22 @@
 		<div>
 			<label>Randomize</label>
 			<div>
-				<input id="r-pattern" type="checkbox">
-				<label for="r-pattern">Pattern</label>
-			</div>
-			<div>
-				<input id="r-invert" type="checkbox">
-				<label for="r-invert">Invert</label>
-			</div>
-			<div>
 				<input id="r-density" type="checkbox">
 				<label for="r-density">Density</label>
 			</div>
 			<div>
-				<input id="r-rotate" type="checkbox">
-				<label for="r-rotate">Rotate</label>
+				<input id="r-invert" type="checkbox">
+				<label for="r-invert">Invert color</label>
+			</div>
+			<div>
+				<input id="r-angle" type="checkbox">
+				<label for="r-angle">Angle</label>
 			</div>
 		</div>
 
 		<div>
 			<label>Layers</label>
-			<div id="layers" class="layer-container">
+			<div id="layers" class="radio-container">
 				<div class="active">
 					<input autocomplete="off" name="layer" value="0" data-label="Layer 1" type="radio" checked>
 					<input autocomplete="off" value="0" class="layer-visibility" type="checkbox" checked>
@@ -565,14 +662,24 @@
 
 			<div>
 				<input id="onion-skin" type="checkbox">
-				<label for="onion-skin"><u>O</u>nion skin</label>
+				<label for="onion-skin">O̲nion skin</label>
+			</div>
+
+			<div>
+				<input id="gridlines" type="checkbox">
+				<label for="gridlines">G̲ridlines</label>
+			</div>
+
+			<div>
+				<input id="invert-background" type="checkbox">
+				<label for="invert-background">Black background</label>
 			</div>
 		</div>
 
 		<div class="buttons">
 			<button id="save_png">Save PNG</button>
 			<button id="save_svg">Save SVG</button>
-			<button id="help"><u>H</u>elp</button>
+			<button id="help">H̲elp</button>
 		</div>
 	</div>
 	<div class="container">
@@ -598,6 +705,24 @@
 				</tbody>
 			</table>
 
+			<span class="bold">Tool hotkeys</span>
+			<table>
+				<tbody>
+					<tr>
+						<td><kbd>B</kbd></td>
+						<td>Brush, click and drag to draw</td>
+					</tr>
+					<tr>
+						<td><kbd>R</kbd></td>
+						<td>Rectangle, draw rectangles filled with current pattern</td>
+					</tr>
+					<tr>
+						<td><kbd>C</kbd></td>
+						<td>Copy to preset, click on a cell to copy all of its layers into a preset for later use</td>
+					</tr>
+				</tbody>
+			</table>
+
 			<span class="bold">Pattern settings</span>
 			<table>
 				<tbody>
@@ -607,7 +732,7 @@
 					</tr>
 					<tr>
 						<td><kbd>D</kbd></td>
-						<td>Set pattern density</td>
+						<td>Change pattern density</td>
 					</tr>
 					<tr>
 						<td><kbd>I</kbd></td>
@@ -615,7 +740,39 @@
 					</tr>
 					<tr>
 						<td><kbd>R</kbd></td>
-						<td>Set pattern rotation</td>
+						<td>Change pattern angle</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<span class="bold">Preset settings</span>
+			<table>
+				<tbody>
+					<tr>
+						<td><kbd>P</kbd></td>
+						<td>Toggle between patterns and presets</td>
+					</tr>
+					<tr>
+						<td><kbd>1</kbd> - <kbd>4</kbd></td>
+						<td>Set preset type</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<span class="bold">Randomization settings</span>
+			<table>
+				<tbody>
+					<tr>
+						<td><kbd>Shift</kbd> + <kbd>D</kbd></td>
+						<td>Toggle randomized pattern density</td>
+					</tr>
+					<tr>
+						<td><kbd>Shift</kbd> + <kbd>I</kbd></td>
+						<td>Toggle randomized color inversion</td>
+					</tr>
+					<tr>
+						<td><kbd>Shift</kbd> + <kbd>R</kbd></td>
+						<td>Toggle randomized pattern angle</td>
 					</tr>
 				</tbody>
 			</table>
@@ -635,6 +792,10 @@
 						<td><kbd>O</kbd></td>
 						<td>Toggle layer onion skin effect</td>
 					</tr>
+					<tr>
+						<td><kbd>G</kbd></td>
+						<td>Toggle gridlines</td>
+					</tr>
 				</tbody>
 			</table>
 
@@ -643,21 +804,24 @@
 	</dialog>
 
 	<script>
-		const gridContainer = document.getElementById('grid-container');
+		const gridElm = document.getElementById('grid');
 		let mode = null;
+		let tool = 'brush';
+		let rectangleStart;
 
 		const brush = {
 			pattern: 0,
-			invert: false,
+			invert: 0,
 			density: 0,
-			rotate: 0
+			angle: 0,
+			preset: false
 		};
 
 		const randomize = {
 			pattern: false,
 			invert: false,
 			density: false,
-			rotate: false
+			angle: false
 		};
 
 		const patterns = [
@@ -681,6 +845,13 @@
 			]
 		];
 
+		const presets = [
+			null,
+			null,
+			null,
+			null
+		];
+
 		function initGrid() {
 			const grid = document.getElementById('grid');
 			const gridCell = document.createElement('div');
@@ -693,10 +864,15 @@
 			gridCell.appendChild(document.createElement('div'));
 
 			for (let i = 0; i < 1024; i++) {
-				grid.appendChild(gridCell.cloneNode(true));
+				const clonedCell = gridCell.cloneNode(true);
+
+				clonedCell.dataset.x = i % 32;
+				clonedCell.dataset.y = Math.floor(i / 32);
+
+				grid.appendChild(clonedCell);
 			}
 
-			document.documentElement.style.setProperty('--container-scale', Math.max(Math.floor((Math.min(window.innerHeight, window.innerWidth) - 151) / 386), 1));
+			document.documentElement.style.setProperty('--container-scale', Math.max(Math.floor((Math.min(window.innerHeight -12, window.innerWidth - 168)) / 386), 1));
 		}
 
 		function randomInt(min, max) {
@@ -704,21 +880,91 @@
 		}
 
 		function paintCell(target) {
-			if (mode === 'paint') {
-				target.dataset.pattern = randomize.pattern ? (randomInt(0, 4)) : brush.pattern;
-				target.dataset.invert = randomize.invert ? (Math.random() < 0.5) : brush.invert;
-				target.dataset.density = randomize.density ? (randomInt(0, 3)) : brush.density;
-				target.dataset.rotate = randomize.rotate ? (randomInt(0, 4) * 90) : brush.rotate;
-			} else if (mode === 'erase') {
-				target.removeAttribute('data-pattern');
-				target.removeAttribute('data-invert');
-				target.removeAttribute('data-density');
-				target.removeAttribute('data-rotate');
+			if (brush.preset === false) {
+				if (mode === 'paint') {
+					target.dataset.pattern = brush.pattern;
+					target.dataset.density = randomize.density ? (randomInt(0, 3)) : brush.density;
+					target.dataset.invert = randomize.invert ? (Math.random() < 0.5) : brush.invert;
+					target.dataset.angle = randomize.angle ? (randomInt(0, 4) * 90) : brush.angle;
+				} else if (mode === 'erase') {
+					target.removeAttribute('data-pattern');
+					target.removeAttribute('data-density');
+					target.removeAttribute('data-invert');
+					target.removeAttribute('data-angle');
+				}
+			} else {
+				const cellDensity = randomize.density ? (randomInt(0, 3)) : 0;
+				const cellInvert = randomize.invert ? (Math.random() < 0.5) : brush.invert;
+				const cellAngle = randomize.angle ? (randomInt(0, 4) * 90) : brush.angle;
+
+				for (let i = 0; i < 4; i++) {
+					const cellLayer = target.parentElement.children[i];
+					const presetLayer = presets[brush.pattern]?.[i];
+
+					if (mode === 'erase' || !presetLayer || !presetLayer.pattern) {
+						cellLayer.removeAttribute('data-pattern');
+						cellLayer.removeAttribute('data-density');
+						cellLayer.removeAttribute('data-invert');
+						cellLayer.removeAttribute('data-angle');
+					} else {
+						cellLayer.dataset.pattern = presetLayer.pattern;
+						cellLayer.dataset.density = (cellDensity + parseInt(presetLayer.density)) % 3;
+						cellLayer.dataset.invert = cellInvert ? (parseInt(presetLayer.invert) ^ 1) : presetLayer.invert;
+						cellLayer.dataset.angle = (cellAngle + parseInt(presetLayer.angle)) % 360;
+					}
+				}
 			}
 		}
 
-		function setPattern(newPattern) {
-			document.documentElement.style.setProperty('--current-pattern', `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='${ newPattern }'/></svg>"`);
+		function drawRectangle(target) {
+			document.getElementById('preview-path').setAttribute('d', `M${ (parseInt(rectangleStart.dataset.x) * 12) + 6 } ${ (parseInt(rectangleStart.dataset.y) * 12) + 6 }H${ (parseInt(target.dataset.x) * 12) + 6 }V${ (parseInt(target.dataset.y) * 12) + 6 }H${ (parseInt(rectangleStart.dataset.x) * 12) + 6 }Z`);
+		}
+
+		function paintRectangle(target) {
+			const startX = Math.min(rectangleStart.dataset.x, target.dataset.x);
+			const endX = Math.max(rectangleStart.dataset.x, target.dataset.x);
+			const startY = Math.min(rectangleStart.dataset.y, target.dataset.y);
+			const endY = Math.max(rectangleStart.dataset.y, target.dataset.y);
+
+			const activeLayer = gridElm.dataset.activeLayer;
+
+			gridElm.querySelectorAll('.grid-cell').forEach(cell => {
+				if (cell.dataset.y >= startY && cell.dataset.y <= endY && cell.dataset.x >= startX && cell.dataset.x <= endX) {
+					paintCell(cell.children[activeLayer]);
+				}
+			});
+
+			rectangleStart = null;
+			document.getElementById('shape-preview').remove();
+		}
+
+		function copyCell(target) {
+			const previewLayers = document.getElementById('presets').querySelectorAll('.preset-display')[brush.pattern].children;
+
+			if (mode === 'paint') {
+				const preset = [];
+				const container = target.parentElement;
+
+				for (let i = 0; i < 4; i++) {
+					const layer = container.children[i];
+
+					if (layer.hasAttribute('data-pattern')) {
+						preset[i] = {...layer.dataset};
+						previewLayers[i].setAttribute('data-pattern', preset[i].pattern);
+						previewLayers[i].setAttribute('data-density', preset[i].density);
+						previewLayers[i].setAttribute('data-invert', preset[i].invert);
+						previewLayers[i].setAttribute('data-angle', preset[i].angle);
+					} else {
+						preset[i] = null;
+						previewLayers[i].removeAttribute('data-pattern');
+						previewLayers[i].removeAttribute('data-density');
+						previewLayers[i].removeAttribute('data-invert');
+						previewLayers[i].removeAttribute('data-angle');
+					}
+				}
+
+				presets[brush.pattern] = preset;
+			}
 		}
 
 		function save_png() {
@@ -728,7 +974,7 @@
 			const ctx = canvas.getContext('2d', {alpha: false});
 			ctx.imageSmoothingEnabled = false;
 
-			ctx.fillStyle = '#fff';
+			ctx.fillStyle = document.documentElement.style.getPropertyValue('--background-color');
 			ctx.fillRect(0, 0, 384, 384);
 
 			for (let i = 1; i <= 4; i++) {
@@ -745,9 +991,9 @@
 
 					ctx.setTransform(1, 0, 0, 1, 0, 0);
 					ctx.translate(x, y);
-					ctx.rotate(cell.dataset.rotate * Math.PI / 180);
+					ctx.rotate(cell.dataset.angle * Math.PI / 180);
 
-					switch (cell.dataset.rotate) {
+					switch (cell.dataset.angle) {
 						case '90':
 							ctx.translate(0, -14);
 							break;
@@ -759,7 +1005,7 @@
 							break;
 					}
 
-					if (cell.dataset.invert === 'true') {
+					if (cell.dataset.invert === '1') {
 						ctx.fillStyle = '#fff';
 					} else {
 						ctx.fillStyle = '#000';
@@ -802,7 +1048,7 @@
 
 			const bg = document.createElement('path');
 			bg.setAttribute('d', 'M0 0H384V384H0');
-			bg.setAttribute('fill', '#fff');
+			bg.setAttribute('fill', document.documentElement.style.getPropertyValue('--background-color'));
 			svgElm.appendChild(bg);
 
 			const group = document.createElement('g');
@@ -823,11 +1069,11 @@
 					const x = (j % 32) * 12;
 					const y = (Math.floor(j / 32)) * 12;
 
-					if (cell.dataset.rotate > 0) {
-						use.setAttribute('transform', `rotate(${ cell.dataset.rotate } ${ x + 7 } ${ y + 7 })`);
+					if (cell.dataset.angle > 0) {
+						use.setAttribute('transform', `rotate(${ cell.dataset.angle } ${ x + 7 } ${ y + 7 })`);
 					}
 
-					if (cell.dataset.invert === 'true') {
+					if (cell.dataset.invert === '1') {
 						use.setAttribute('fill', '#fff');
 					}
 
@@ -853,16 +1099,41 @@
 			document.body.removeChild(link);
 		}
 
-		gridContainer.addEventListener('mousedown', e => {
+		gridElm.addEventListener('mousedown', e => {
 			if (e.button === 0) {
 				mode = 'paint';
-				paintCell(e.target);
 			} else if (e.button === 2) {
 				e.preventDefault();
 				mode = 'erase';
-				paintCell(e.target);
 			} else {
 				mode = null;
+				return;
+			}
+
+			switch (tool) {
+				case 'brush':
+					paintCell(e.target);
+					break;
+				case 'rectangle':
+					if (rectangleStart) {
+						paintRectangle(e.target.closest('.grid-cell'));
+					} else {
+						rectangleStart = e.target.closest('.grid-cell');
+
+						const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+						svg.id = 'shape-preview';
+
+						const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+						path.id = 'preview-path';
+
+						svg.appendChild(path);
+
+						document.getElementById('grid-container').appendChild(svg);
+					}
+					break;
+				case 'copy':
+					copyCell(e.target);
+					break;
 			}
 		});
 
@@ -871,7 +1142,7 @@
 		});
 
 		window.addEventListener('resize', e => {
-			document.documentElement.style.setProperty('--container-scale', Math.max(Math.floor((Math.min(window.innerHeight, window.innerWidth) - 151) / 386), 1));
+			document.documentElement.style.setProperty('--container-scale', Math.max(Math.floor((Math.min(window.innerHeight, window.innerWidth - 168)) / 386), 1));
 		}, {
 			passive: true
 		});
@@ -890,42 +1161,72 @@
 					document.querySelector(`#layers [type="radio"][value="${ number }"]`)?.click();
 				} else if (e.ctrlKey) {
 					document.querySelector(`#layers [type="checkbox"][value="${ number }"]`)?.click();
+				} else if (brush.preset) {
+					document.querySelector(`#presets [value="${ number }"]`)?.click();
 				} else {
 					document.querySelector(`#patterns [data-pattern="${ number }"][data-density="${ brush.density }"]`)?.click();
 				}
 			} else if (e.code === 'KeyI') {
-				document.getElementById('invert').click();
+				if (e.shiftKey) {
+					document.getElementById('r-invert').click();
+				} else {
+					document.getElementById('invert').click();
+				}
 			} else if (e.code === 'KeyD') {
-				brush.density++;
+				if (e.shiftKey) {
+					document.getElementById('r-density').click();
+				} else {
+					brush.density++;
 
-				if (brush.density > 2) {
-					brush.density = 0;
+					if (brush.density > 2) {
+						brush.density = 0;
+					}
+
+					document.querySelector(`#patterns [data-pattern="${ brush.pattern }"][data-density="${ brush.density }"]`)?.click();
 				}
+			} else if (e.code === 'KeyA') {
+				if (e.shiftKey) {
+					document.getElementById('r-angle').click();
+				} else {
+					brush.angle += 90;
 
-				document.querySelector(`#patterns [data-pattern="${ brush.pattern }"][data-density="${ brush.density }"]`)?.click();
-			} else if (e.code === 'KeyR') {
-				brush.rotate += 90;
+					if (brush.angle > 270) {
+						brush.angle = 0;
+					}
 
-				if (brush.rotate > 270) {
-					brush.rotate = 0;
+					document.documentElement.style.setProperty('--current-angle', `${ brush.angle }deg`);
+					document.getElementById('angle').value = brush.angle;
 				}
-
-				document.documentElement.style.setProperty('--current-rotate', `${ brush.rotate }deg`);
-				document.getElementById('rotate').value = brush.rotate;
 			} else if (e.code === 'KeyO') {
 				document.getElementById('onion-skin').click();
 			} else if (e.code === 'KeyH') {
 				document.getElementById('help').click();
+			} else if (e.code === 'KeyG') {
+				document.getElementById('gridlines').click();
+			} else if (e.code === 'KeyB') {
+				document.querySelector('#tools [value="brush"]').click();
+			} else if (e.code === 'KeyR') {
+				document.querySelector('#tools [value="rectangle"]').click();
+			} else if (e.code === 'KeyC') {
+				document.querySelector('#tools [value="copy"]').click();
+			} else if (e.code === 'KeyP') {
+				if (brush.preset) {
+					document.getElementById('patterns').querySelectorAll('input')[(brush.density * 4) + brush.pattern].click();
+				} else {
+					document.getElementById('presets').querySelectorAll('input')[brush.pattern].click();
+				}
 			}
 		});
 
-		gridContainer.addEventListener('contextmenu', e => {
+		gridElm.addEventListener('contextmenu', e => {
 			e.preventDefault();
 		});
 
-		gridContainer.addEventListener('mouseover', e => {
-			if (mode) {
+		gridElm.addEventListener('mouseover', e => {
+			if (mode && tool === 'brush') {
 				paintCell(e.target);
+			} else if (rectangleStart) {
+				drawRectangle(e.target.closest('.grid-cell'));			
 			}
 		});
 
@@ -934,43 +1235,70 @@
 		});
 
 		document.getElementById('invert').addEventListener('change', e => {
-			brush.invert = e.target.checked;
+			brush.invert = e.target.checked ? 1 : 0;
 			document.documentElement.style.setProperty('--current-invert', brush.invert ? 'invert(100%)' : 'none');
 		});
 
+		document.getElementById('gridlines').addEventListener('change', e => {
+			document.getElementById('grid').classList.toggle('gridlines', e.target.checked);
+		});
+
 		document.getElementById('onion-skin').addEventListener('change', e => {
-			document.getElementById('grid').dataset.onionSkin = parseInt(document.getElementById('grid').dataset.onionSkin) ? 0 : 1;
+			document.getElementById('grid').classList.toggle('onion-skin', e.target.checked);
+		});
+
+		document.getElementById('invert-background').addEventListener('change', e => {
+			document.documentElement.style.setProperty('--background-color', e.target.checked ? '#000' : '#fff');
 		});
 
 		document.getElementById('patterns').addEventListener('click', e => {
 			if (e.target.dataset.pattern) {
 				brush.pattern = parseInt(e.target.dataset.pattern);
 				brush.density = parseInt(e.target.dataset.density);
-				setPattern(patterns[brush.density][brush.pattern]);
+				brush.preset = false;
+
+				document.documentElement.style.setProperty('--current-pattern', `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='${ patterns[brush.density][brush.pattern] }'/></svg>"`);
 			}
 		});
 
-		document.getElementById('rotate').addEventListener('change', e => {
-			brush.rotate = e.target.value;
-			document.documentElement.style.setProperty('--current-rotate', `${ brush.rotate }deg`);
+		document.getElementById('presets').addEventListener('click', e => {
+			if (e.target.matches('input')) {
+				brush.pattern = parseInt(e.target.value);
+				brush.preset = true;
+
+				document.documentElement.style.setProperty('--current-pattern', 'foo');
+			}
+		});
+
+		document.getElementById('angle').addEventListener('input', e => {
+			brush.angle = e.target.value;
+			document.documentElement.style.setProperty('--current-angle', `${ brush.angle }deg`);
 		});
 
 		document.getElementById('layers').addEventListener('click', function(e) {
 			if (e.target.type === 'radio') {
 				this.querySelector('.active')?.classList.remove('active');
-				this.children[e.target.value]?.classList.add('active');
+				e.target.parentElement.classList.add('active');
 				document.getElementById('grid').dataset.activeLayer = e.target.value;
 			} else if (e.target.type === 'checkbox') {
 				document.getElementById('grid').classList.toggle(`hide-layer-${ e.target.value }`, !e.target.checked);
 			}
 		});
 
-		document.querySelectorAll('[type="checkbox"]').forEach(elm => {
-			elm.checked = elm.matches('.layer-visibility');
+		document.getElementById('tools').addEventListener('click', function(e) {
+			if (e.target.type === 'radio') {
+				this.querySelector('.active')?.classList.remove('active');
+				e.target.parentElement.classList.add('active');
+				tool = e.target.value;
+
+				if (tool === 'copy') {
+					document.getElementById('presets').querySelectorAll('input')[brush.pattern].click();
+				}
+			}
 		});
 
-		document.getElementById('r-pattern').addEventListener('change', e => {
-			randomize.pattern = e.target.checked;
+		document.querySelectorAll('[type="checkbox"]').forEach(elm => {
+			elm.checked = elm.matches('.layer-visibility');
 		});
 
 		document.getElementById('r-invert').addEventListener('change', e => {
@@ -981,8 +1309,8 @@
 			randomize.density = e.target.checked;
 		});
 
-		document.getElementById('r-rotate').addEventListener('change', e => {
-			randomize.rotate = e.target.checked;
+		document.getElementById('r-angle').addEventListener('change', e => {
+			randomize.angle = e.target.checked;
 		});
 
 		document.getElementById('close-modal').addEventListener('click', e => {
