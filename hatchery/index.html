@@ -8,7 +8,6 @@
 
 	<style>
 		:root {
-			--current-pattern: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m5 5h4v4h-4'/></svg>");
 			--current-angle: 0deg;
 			--current-invert: none;
 			--container-scale: 1;
@@ -20,8 +19,6 @@
 			margin: 0;
 			height: 100vh;
 			display: flex;
-			justify-items: center;
-			align-items: center;
 		}
 
 		body,
@@ -35,8 +32,8 @@
 		}
 
 		.container {
-			padding-top: 6px;
-			height: 100%;
+			margin-top: 6px;
+			height: calc(100% - 6px);
 			width: 100%;
 			min-height: 408px;
 			min-width: 408px;
@@ -49,7 +46,8 @@
 			width: 384px;
 			border: 1px solid #7f7f7f;
 			transform: scale(var(--container-scale));
-			transform-origin: top left;
+			transform-origin: 0 0;
+			cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='4' height='4'><path fill='%237f7f7f' d='M0 2 2 0 4 2 2 4'/></svg>") 2 2, auto;
 		}
 
 		.grid {
@@ -57,15 +55,19 @@
 			display: grid;
 			grid-template-columns: repeat(32, 12px);
 			grid-auto-rows: 12px;
+			touch-action: pinch-zoom;
 		}
 
 		.grid-cell div {
 			pointer-events: none;
-			position: absolute;
-			top: -1px;
-			left: -1px;
 			height: 14px;
 			width: 14px;
+			position: absolute;
+		}
+
+		.grid-cell > div {
+			top: -1px;
+			left: -1px;
 		}
 
 		.grid.onion-skin .grid-cell div {
@@ -96,15 +98,17 @@
 		.grid[data-active-layer="1"] .grid-cell div:nth-child(2),
 		.grid[data-active-layer="2"] .grid-cell div:nth-child(3),
 		.grid[data-active-layer="3"] .grid-cell div:nth-child(4) {
-			pointer-events: auto;
-			cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='4' height='4'><path fill='%237f7f7f' d='M0 2 2 0 4 2 2 4'/></svg>") 2 2, auto;
 			opacity: 1;
 		}
 
 		.grid.hide-layer-0 .grid-cell div:nth-child(1),
 		.grid.hide-layer-1 .grid-cell div:nth-child(2),
 		.grid.hide-layer-2 .grid-cell div:nth-child(3),
-		.grid.hide-layer-3 .grid-cell div:nth-child(4) {
+		.grid.hide-layer-3 .grid-cell div:nth-child(4),
+		.grid[data-active-layer="0"] .grid-cell:hover div:nth-child(1),
+		.grid[data-active-layer="1"] .grid-cell:hover div:nth-child(2),
+		.grid[data-active-layer="2"] .grid-cell:hover div:nth-child(3),
+		.grid[data-active-layer="3"] .grid-cell:hover div:nth-child(4) {
 			display: none;
 		}
 
@@ -117,24 +121,12 @@
 			height: 100%;
 			top: 0;
 			left: 0;
-			z-index: 1;
+			z-index: 5;
 			background: url("data: image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><path stroke='%237f7f7f' stroke-opacity='.5' fill='none' d='M0 12H12V0'/></svg>");
 		}
 
 		.grid .grid-cell {
 			position: relative;
-		}
-
-		.grid-cell div:hover {
-			outline: 1px solid #7f7f7f;
-			outline-offset: -1px;
-		}
-
-		.grid-cell div:hover {
-			background: var(--current-pattern) !important;
-			rotate: var(--current-angle) !important;
-			filter: var(--current-invert) !important;
-			z-index: 5 !important;
 		}
 
 		[data-angle="90"] {
@@ -177,7 +169,7 @@
 
 		.pattern-palette input {
 			appearance: none;
-			background-color: #fff !important;
+			background-color: #7f7f7f;
 			display: inline-block;
 			height: 14px;
 			width: 14px;
@@ -196,7 +188,7 @@
 		}
 
 		.pattern-palette .preset-container input {
-			background-color: #7f7f7f !important;
+			background-color: #7f7f7f;
 		}
 
 		.preset-container {
@@ -219,51 +211,51 @@
 		}
 
 		[data-pattern="0"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m5 5h4v4h-4'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m5 5h4v4h-4'/></svg>");
 		}
 
 		[data-pattern="1"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m0 1 1-1 13 13-1 1'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m0 1 1-1 13 13-1 1'/></svg>");
 		}
 
 		[data-pattern="2"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 6h12v2h-12'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 6h12v2h-12'/></svg>");
 		}
 
 		[data-pattern="3"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m5 1h-4v4'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m5 1h-4v4'/></svg>");
 		}
 
 		[data-pattern="0"][data-density="1"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m3 3h8v8h-8'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m3 3h8v8h-8'/></svg>");
 		}
 
 		[data-pattern="1"][data-density="1"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m0 7 1-1 7 7-1 1m-1-13 1-1 7 7-1 1'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m0 7 1-1 7 7-1 1m-1-13 1-1 7 7-1 1'/></svg>");
 		}
 
 		[data-pattern="2"][data-density="1"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 3h12v2h-12m0 4h12v2h-12'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 3h12v2h-12m0 4h12v2h-12'/></svg>");
 		}
 
 		[data-pattern="3"][data-density="1"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m9 1h-8v8'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m9 1h-8v8'/></svg>");
 		}
 
 		[data-pattern="0"][data-density="2"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 1h12v12h-12'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 1h12v12h-12'/></svg>");
 		}
 
 		[data-pattern="1"][data-density="2"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m0 7 1-1 7 7-1 1m-7-13 1-1 13 13-1 1m-7-13 1-1 7 7-1 1'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m0 7 1-1 7 7-1 1m-7-13 1-1 13 13-1 1m-7-13 1-1 7 7-1 1'/></svg>");
 		}
 
 		[data-pattern="2"][data-density="2"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 2h12v2h-12m0 2h12v2h-12m0 2h12v2h-12'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 2h12v2h-12m0 2h12v2h-12m0 2h12v2h-12'/></svg>");
 		}
 
 		[data-pattern="3"][data-density="2"] {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m13 1h-12v12'/></svg>");
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m13 1h-12v12'/></svg>");
 		}
 
 		.pattern-palette {
@@ -283,6 +275,7 @@
 		.radio-container > div {
 			display: inline-flex;
 			margin: 2px;
+			position: relative;
 		}
 
 		.radio-container input {
@@ -292,10 +285,6 @@
 
 		.radio-container input:hover {
 			opacity: .5;
-		}
-
-		.radio-container .active {
-			outline: 2px solid #7f7f7f;
 		}
 
 		.radio-container [type="radio"] {
@@ -310,6 +299,9 @@
 
 		.radio-container [type="radio"]:checked {
 			font-weight: bold;
+			outline: 2px solid #7f7f7f;
+			background-color: #7f7f7f;
+			color: #fff;
 		}
 
 		.radio-container [type="radio"]::before {
@@ -325,6 +317,9 @@
 			display: inline-grid;
 			place-content: center;
 			padding-right: 8px;
+			position: absolute;
+			right: 0;
+			top: 0;
 		}
 
 		.radio-container [type="checkbox"]::before {
@@ -335,7 +330,7 @@
 		}
 
 		.radio-container [type="checkbox"]:checked::before {
-			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 10'><path fill='none' stroke='%23000' d='M1 5a5 5 0 0 0 9 0 5 5 0 0 0-9 0Zm3 0a1 1 0 0 0 3 0 1 1 0 0 0-3 0'/></svg>");
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 10'><path fill='%23fff' stroke='%23000' d='M1 5a5 5 0 0 0 9 0 5 5 0 0 0-9 0Zm3 0a1 1 0 0 0 3 0 1 1 0 0 0-3 0'/></svg>");
 		}
 
 		.controls {
@@ -387,7 +382,7 @@
 			cursor: pointer;
 		}
 
-		button:last-child {
+		.buttons button:last-child {
 			margin-top: 8px;
 		}
 
@@ -428,10 +423,25 @@
 			padding: 0;
 		}
 
-		dialog div {
+		dialog > div {
 			border: 2px solid #7f7f7f;
 			padding: 8px;
 			max-width: 408px;
+		}
+
+		dialog > div > div {
+			margin-left: 8px;
+			margin-bottom: 12px;
+		}
+
+		dialog > div:first-child {
+			height: 50%;
+			overflow: scroll;
+			border-bottom: none;
+		}
+
+		dialog > div:last-child {
+			border-top-width: 1px;
 		}
 
 		dialog:focus {
@@ -454,6 +464,10 @@
 			width: 100%;
 		}
 
+		table:last-child {
+			margin-bottom: 0;
+		}
+
 		td {
 			border: 1px solid #7f7f7f;
 			padding: 4px;
@@ -474,7 +488,25 @@
 			height: 1rem;
 			display: inline-block;
 			border: 2px solid #7f7f7f;
+			background-color: #7f7f7f;
+			color: #fff;
 			font-weight: bold;
+		}
+
+		input[type="text"] {
+			border: 2px solid #7f7f7f;
+			border-radius: 0;
+			background: #fff;
+			color: #000;
+		}
+
+		input::placeholder {
+			color: #7f7f7f;
+			opacity: 1;
+		}
+
+		input[type="text"]:focus {
+			outline: none;
 		}
 
 		input[type="range"] {
@@ -521,9 +553,43 @@
 
 		#shape-preview {
 			stroke: #7f7f7f;
-			fill: none;
+			fill: #7f7f7f;
 			overflow: visible;
 			pointer-events: none;
+			position: relative;
+			z-index: 6;
+			opacity: .5;
+		}
+
+		#brush-preview {
+			pointer-events: none;
+			z-index: 7;
+			outline: 1px solid #7f7f7f;
+			outline-offset: -1px;
+			opacity: 1;
+		}
+
+		#brush-preview[data-type="preset"]::before {
+			content: '';
+			position: absolute;
+			display: block;
+			height: 12px;
+			width: 12px;
+			top: 1px;
+			left: 1px;
+			background: var(--background-color);
+		}
+
+		#brush-preview[data-invert="1"][data-type="preset"]::before {
+			filter: invert(100%);
+		}
+
+		#brush-preview[data-type="preset"] > div {
+			display: block;
+		}
+
+		#brush-preview[data-type="brush"] > div {
+			display: none;
 		}
 	</style>
 </head>
@@ -532,8 +598,11 @@
 		<div>
 			<label>Tool</label>
 			<div id="tools" class="radio-container">
-				<div class="active">
+				<div>
 					<input type="radio" name="tool" data-label="B̲rush" value="brush" checked>
+				</div>
+				<div>
+					<input type="radio" name="tool" data-label="E̲rase" value="erase">
 				</div>
 				<div>
 					<input type="radio" name="tool" data-label="R̲ectangle" value="rectangle">
@@ -568,36 +637,36 @@
 					<div class="preset-container">
 						<input autocomplete="off" name="pattern" value="0" type="radio">
 						<div class="preset-display">
-							<div></div>
-							<div></div>
-							<div></div>
+							<div data-pattern="0" data-density="2" data-invert="0" data-angle="0"></div>
+							<div data-pattern="0" data-density="1" data-invert="1" data-angle="0"></div>
+							<div data-pattern="0" data-density="0" data-invert="0" data-angle="0"></div>
 							<div></div>
 						</div>
 					</div>
 					<div class="preset-container">
 						<input autocomplete="off" name="pattern" value="1" type="radio">
 						<div class="preset-display">
-							<div></div>
-							<div></div>
-							<div></div>
-							<div></div>
+							<div data-pattern="2" data-density="1" data-invert="0" data-angle="270"></div>
+							<div data-pattern="3" data-density="1" data-invert="1" data-angle="270"></div>
+							<div data-pattern="3" data-density="1" data-invert="1" data-angle="180"></div>
+							<div data-pattern="2" data-density="0" data-invert="0" data-angle="270"></div>
 						</div>
 					</div>
 					<div class="preset-container">
 						<input autocomplete="off" name="pattern" value="2" type="radio">
 						<div class="preset-display">
-							<div></div>
-							<div></div>
-							<div></div>
-							<div></div>
+							<div data-pattern="1" data-density="1" data-invert="0" data-angle="180"></div>
+							<div data-pattern="1" data-density="1" data-invert="0" data-angle="270"></div>
+							<div data-pattern="2" data-density="1" data-invert="0" data-angle="270"></div>
+							<div data-pattern="2" data-density="1" data-invert="0" data-angle="0"></div>
 						</div>
 					</div>
 					<div class="preset-container">
 						<input autocomplete="off" name="pattern" value="3" type="radio">
 						<div class="preset-display">
-							<div></div>
-							<div></div>
-							<div></div>
+							<div data-pattern="0" data-density="2" data-invert="0" data-angle="0"></div>
+							<div data-pattern="3" data-density="1" data-invert="1" data-angle="0"></div>
+							<div data-pattern="3" data-density="1" data-invert="1" data-angle="180"></div>
 							<div></div>
 						</div>
 					</div>
@@ -637,12 +706,16 @@
 				<input id="r-angle" type="checkbox">
 				<label for="r-angle">Angle</label>
 			</div>
+			<div>
+				<input id="r-skip" type="checkbox">
+				<label for="r-skip">Skip</label>
+			</div>
 		</div>
 
 		<div>
 			<label>Layers</label>
 			<div id="layers" class="radio-container">
-				<div class="active">
+				<div>
 					<input autocomplete="off" name="layer" value="0" data-label="Layer 1" type="radio" checked>
 					<input autocomplete="off" value="0" class="layer-visibility" type="checkbox" checked>
 				</div>
@@ -677,8 +750,7 @@
 		</div>
 
 		<div class="buttons">
-			<button id="save_png">Save PNG</button>
-			<button id="save_svg">Save SVG</button>
+			<button id="open-save-modal">Save image</button>
 			<button id="help">H̲elp</button>
 		</div>
 	</div>
@@ -696,7 +768,7 @@
 				<tbody>
 					<tr>
 						<td><kbd>Left click</kbd></td>
-						<td>Paint with current pattern</td>
+						<td>Use current tool</td>
 					</tr>
 					<tr>
 						<td><kbd>Right click</kbd></td>
@@ -711,6 +783,10 @@
 					<tr>
 						<td><kbd>B</kbd></td>
 						<td>Brush, click and drag to draw</td>
+					</tr>
+					<tr>
+						<td><kbd>E</kbd></td>
+						<td>Erase, click and drag to erase</td>
 					</tr>
 					<tr>
 						<td><kbd>R</kbd></td>
@@ -774,6 +850,10 @@
 						<td><kbd>Shift</kbd> + <kbd>R</kbd></td>
 						<td>Toggle randomized pattern angle</td>
 					</tr>
+					<tr>
+						<td><kbd>Shift</kbd> + <kbd>S</kbd></td>
+						<td>Toggle 50% chance of skipping a cell when drawing or erasing</td>
+					</tr>
 				</tbody>
 			</table>
 
@@ -798,8 +878,44 @@
 					</tr>
 				</tbody>
 			</table>
+		</div>
+		<div>
+			<button id="close-help">Close</button>
+		</div>
+	</dialog>
 
-			<button id="close-modal">Close</button>
+	<dialog id="save-modal">
+		<div>
+			<label for="image-name" class="bold">Name</label>
+			<div>
+				<input id="image-name" type="text" placeholder="hatchery_YYYY-MM-DD.png">
+			</div>
+
+			<label class="bold">Format</label>
+			<div class="radio-container" id="image-format">
+				<div>
+					<input type="radio" name="format" value="png" data-label="PNG" checked>
+				</div>
+				<div>
+					<input type="radio" name="format" value="svg" data-label="SVG">
+				</div>
+			</div>
+
+			<label for="image-scale" class="bold">Scale</label>
+			<div>
+				<input id="image-scale" type="range" value="0" step="1" min="1" max="4" list="image-scale-ticks">
+				<datalist id="image-scale-ticks">
+					<option value="1" label="1"></option>
+					<option value="2" label="2"></option>
+					<option value="3" label="3"></option>
+					<option value="4" label="4"></option>
+				</datalist>
+			</div>
+		</div>
+
+		<div class="buttons">
+			<button id="save">Save image</button>
+			<button id="close-save">Cancel</button>
 		</div>
 	</dialog>
 
@@ -807,21 +923,32 @@
 		const gridElm = document.getElementById('grid');
 		let mode = null;
 		let tool = 'brush';
-		let rectangleStart;
 
 		const brush = {
 			pattern: 0,
 			invert: 0,
 			density: 0,
 			angle: 0,
-			preset: false
+			preset: false,
+			layer: 0
+		};
+
+		const shape = {
+			start: null,
+			end: null
 		};
 
 		const randomize = {
-			pattern: false,
 			invert: false,
 			density: false,
-			angle: false
+			angle: false,
+			skip: false
+		};
+
+		const image = {
+			name: null,
+			format: 'png',
+			scale: 1
 		};
 
 		const patterns = [
@@ -846,13 +973,117 @@
 		];
 
 		const presets = [
-			null,
-			null,
-			null,
-			null
+			[
+				{
+					pattern: "0",
+					density: "2",
+					invert: "0",
+					angle: "0"
+				},
+				{
+					pattern: "0",
+					density: "1",
+					invert: "1",
+					angle: "0"
+				},
+				{
+					pattern: "0",
+					density: "0",
+					invert: "0",
+					angle: "0"
+				},
+				null
+			],
+			[
+				{
+					pattern: "2",
+					density: "1",
+					invert: "0",
+					angle: "270"
+				},
+				{
+					pattern: "3",
+					density: "1",
+					invert: "1",
+					angle: "270"
+				},
+				{
+					pattern: "3",
+					density: "1",
+					invert: "1",
+					angle: "180"
+				},
+				{
+					pattern: "2",
+					density: "0",
+					invert: "0",
+					angle: "270"
+				}
+			],
+			[
+				{
+					pattern: "1",
+					density: "1",
+					invert: "0",
+					angle: "180"
+				},
+				{
+					pattern: "1",
+					density: "1",
+					invert: "0",
+					angle: "270"
+				},
+				{
+					pattern: "2",
+					density: "1",
+					invert: "0",
+					angle: "270"
+				},
+				{
+					pattern: "2",
+					density: "1",
+					invert: "0",
+					angle: "0"
+				}
+			],
+			[
+				{
+					pattern: "0",
+					density: "2",
+					invert: "0",
+					angle: "0"
+				},
+				{
+					pattern: "3",
+					density: "1",
+					invert: "1",
+					angle: "0"
+				},
+				{
+					pattern: "3",
+					density: "1",
+					invert: "1",
+					angle: "180"
+				},
+				null
+			]
 		];
 
+		const brushPreview = document.createElement('div');
+		brushPreview.id = 'brush-preview';
+		brushPreview.dataset.pattern = 0;
+		brushPreview.dataset.density = 0;
+		brushPreview.dataset.invert = 0;
+		brushPreview.dataset.pattern = 0;
+		brushPreview.dataset.type = 'brush';
+		brushPreview.appendChild(document.createElement('div'));
+		brushPreview.appendChild(document.createElement('div'));
+		brushPreview.appendChild(document.createElement('div'));
+		brushPreview.appendChild(document.createElement('div'));
+
 		function initGrid() {
+			document.documentElement.style.setProperty('--background-color', '#fff');
+
 			const grid = document.getElementById('grid');
 			const gridCell = document.createElement('div');
 
@@ -880,21 +1111,23 @@
 		}
 
 		function paintCell(target) {
+			if (randomize.skip && Math.round(Math.random())) return;
+
 			if (brush.preset === false) {
-				if (mode === 'paint') {
-					target.dataset.pattern = brush.pattern;
-					target.dataset.density = randomize.density ? (randomInt(0, 3)) : brush.density;
-					target.dataset.invert = randomize.invert ? (Math.random() < 0.5) : brush.invert;
-					target.dataset.angle = randomize.angle ? (randomInt(0, 4) * 90) : brush.angle;
-				} else if (mode === 'erase') {
+				if (mode === 'erase' || tool === 'erase') {
 					target.removeAttribute('data-pattern');
 					target.removeAttribute('data-density');
 					target.removeAttribute('data-invert');
 					target.removeAttribute('data-angle');
+				} else {
+					target.dataset.pattern = brush.pattern;
+					target.dataset.density = randomize.density ? randomInt(0, 3) : brush.density;
+					target.dataset.invert = randomize.invert ? Math.round(Math.random()) : brush.invert;
+					target.dataset.angle = randomize.angle ? (randomInt(0, 4) * 90) : brush.angle;
 				}
 			} else {
-				const cellDensity = randomize.density ? (randomInt(0, 3)) : 0;
-				const cellInvert = randomize.invert ? (Math.random() < 0.5) : brush.invert;
+				const cellDensity = randomize.density ? randomInt(0, 3) : 0;
+				const cellInvert = randomize.invert ? Math.round(Math.random()) : brush.invert;
 				const cellAngle = randomize.angle ? (randomInt(0, 4) * 90) : brush.angle;
 
 				for (let i = 0; i < 4; i++) {
@@ -917,24 +1150,25 @@
 		}
 
 		function drawRectangle(target) {
-			document.getElementById('preview-path').setAttribute('d', `M${ (parseInt(rectangleStart.dataset.x) * 12) + 6 } ${ (parseInt(rectangleStart.dataset.y) * 12) + 6 }H${ (parseInt(target.dataset.x) * 12) + 6 }V${ (parseInt(target.dataset.y) * 12) + 6 }H${ (parseInt(rectangleStart.dataset.x) * 12) + 6 }Z`);
+			shape.end = target;
+
+			document.getElementById('preview-path').setAttribute('d', `M${ (parseInt(shape.start.dataset.x) * 12) + 6 } ${ (parseInt(shape.start.dataset.y) * 12) + 6 }H${ (parseInt(shape.end.dataset.x) * 12) + 6 }V${ (parseInt(shape.end.dataset.y) * 12) + 6 }H${ (parseInt(shape.start.dataset.x) * 12) + 6 }Z`);
 		}
 
-		function paintRectangle(target) {
-			const startX = Math.min(rectangleStart.dataset.x, target.dataset.x);
-			const endX = Math.max(rectangleStart.dataset.x, target.dataset.x);
-			const startY = Math.min(rectangleStart.dataset.y, target.dataset.y);
-			const endY = Math.max(rectangleStart.dataset.y, target.dataset.y);
-
-			const activeLayer = gridElm.dataset.activeLayer;
+		function paintRectangle() {
+			const startX = Math.min(shape.start.dataset.x, shape.end.dataset.x);
+			const endX = Math.max(shape.start.dataset.x, shape.end.dataset.x);
+			const startY = Math.min(shape.start.dataset.y, shape.end.dataset.y);
+			const endY = Math.max(shape.start.dataset.y, shape.end.dataset.y);
 
 			gridElm.querySelectorAll('.grid-cell').forEach(cell => {
 				if (cell.dataset.y >= startY && cell.dataset.y <= endY && cell.dataset.x >= startX && cell.dataset.x <= endX) {
-					paintCell(cell.children[activeLayer]);
+					paintCell(cell.children[brush.layer]);
 				}
 			});
 
-			rectangleStart = null;
+			shape.start = null;
+			shape.end = null;
 			document.getElementById('shape-preview').remove();
 		}
 
@@ -943,17 +1177,18 @@
 
 			if (mode === 'paint') {
 				const preset = [];
-				const container = target.parentElement;
+
+				brushPreview.innerHTML = '';
 
 				for (let i = 0; i < 4; i++) {
-					const layer = container.children[i];
+					const layer = target.children[i];
 
 					if (layer.hasAttribute('data-pattern')) {
 						preset[i] = {...layer.dataset};
-						previewLayers[i].setAttribute('data-pattern', preset[i].pattern);
-						previewLayers[i].setAttribute('data-density', preset[i].density);
-						previewLayers[i].setAttribute('data-invert', preset[i].invert);
-						previewLayers[i].setAttribute('data-angle', preset[i].angle);
+						previewLayers[i].dataset.pattern = preset[i].pattern;
+						previewLayers[i].dataset.density = preset[i].density;
+						previewLayers[i].dataset.invert = preset[i].invert;
+						previewLayers[i].dataset.angle = preset[i].angle;
 					} else {
 						preset[i] = null;
 						previewLayers[i].removeAttribute('data-pattern');
@@ -961,6 +1196,8 @@
 						previewLayers[i].removeAttribute('data-invert');
 						previewLayers[i].removeAttribute('data-angle');
 					}
+
+					brushPreview.appendChild(previewLayers[i].cloneNode());
 				}
 
 				presets[brush.pattern] = preset;
@@ -969,13 +1206,15 @@
 
 		function save_png() {
 			const canvas = document.createElement('canvas');
-			canvas.width = 384;
-			canvas.height = 384;
+			const side = 384 * image.scale;
+
+			canvas.width = side;
+			canvas.height = side;
 			const ctx = canvas.getContext('2d', {alpha: false});
 			ctx.imageSmoothingEnabled = false;
 
 			ctx.fillStyle = document.documentElement.style.getPropertyValue('--background-color');
-			ctx.fillRect(0, 0, 384, 384);
+			ctx.fillRect(0, 0, side, side);
 
 			for (let i = 1; i <= 4; i++) {
 				const cells = document.getElementById('grid').querySelectorAll(`.grid-cell div:nth-child(${ i })`);
@@ -990,6 +1229,7 @@
 					const y = ((Math.floor(j / 32)) * 12) - 1;
 
 					ctx.setTransform(1, 0, 0, 1, 0, 0);
+					ctx.scale(image.scale, image.scale);
 					ctx.translate(x, y);
 					ctx.rotate(cell.dataset.angle * Math.PI / 180);
 
@@ -1020,7 +1260,7 @@
 				const link = document.createElement('a');
 
 				link.href = URL.createObjectURL(blob);
-				link.download = `hatchery_${ currentDate }.png`;
+				link.download = `${ image.name ?? `hatchery_${ currentDate }` }.png`;
 
 				document.body.appendChild(link);
 				link.click();
@@ -1029,10 +1269,13 @@
 		}
 
 		function save_svg() {
+			const side = 384 * image.scale;
 			const svgElm = document.createElement('svg');
 			svgElm.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 			svgElm.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-			svgElm.setAttribute('viewBox', '0 0 384 384');
+			svgElm.setAttribute('height', side);
+			svgElm.setAttribute('height', side);
+			svgElm.setAttribute('viewBox', `0 0 ${ side } ${ side }`);
 
 			const defs = document.createElement('defs');
 
@@ -1047,12 +1290,12 @@
 			svgElm.appendChild(defs);
 
 			const bg = document.createElement('path');
-			bg.setAttribute('d', 'M0 0H384V384H0');
+			bg.setAttribute('d', `M0 0H${ side }V${ side }H0`);
 			bg.setAttribute('fill', document.documentElement.style.getPropertyValue('--background-color'));
 			svgElm.appendChild(bg);
 
 			const group = document.createElement('g');
-			group.setAttribute('transform', 'translate(-1 -1)');
+			group.setAttribute('transform', `scale(${ image.scale }) translate(-1 -1)`);
 
 			for (let i = 1; i <= 4; i++) {
 				const cells = document.getElementById('grid').querySelectorAll(`.grid-cell div:nth-child(${ i })`);
@@ -1092,15 +1335,15 @@
 			const link = document.createElement("a");
 
 			link.href = svgUrl;
-			link.download = `hatchery_${ currentDate }.svg`;
+			link.download = `${ image.name ?? `hatchery_${ currentDate }` }.png`;
 
 			document.body.appendChild(link);
 			link.click();
 			document.body.removeChild(link);
 		}
 
-		gridElm.addEventListener('mousedown', e => {
-			if (e.button === 0) {
+		gridElm.addEventListener('pointerdown', e => {
+			if (e.button === 0 || e.touches?.length === 1) {
 				mode = 'paint';
 			} else if (e.button === 2) {
 				e.preventDefault();
@@ -1112,13 +1355,16 @@
 
 			switch (tool) {
 				case 'brush':
-					paintCell(e.target);
+				case 'erase':
+					paintCell(e.target.children[brush.layer]);
 					break;
 				case 'rectangle':
-					if (rectangleStart) {
-						paintRectangle(e.target.closest('.grid-cell'));
+					if (shape.start) {
+						shape.end = e.target;
+
+						paintRectangle();
 					} else {
-						rectangleStart = e.target.closest('.grid-cell');
+						shape.start = e.target;
 
 						const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 						svg.id = 'shape-preview';
@@ -1137,8 +1383,14 @@
 			}
 		});
 
-		document.addEventListener('mouseup', e => {
-			mode = null;
+		document.addEventListener('pointerup', e => {
+			if (!e.touches?.length) {
+				if (shape.end) {
+					paintRectangle();
+				}
+
+				mode = null;
+			}
 		});
 
 		window.addEventListener('resize', e => {
@@ -1153,7 +1405,15 @@
 			}
 		})
 
+		document.getElementById('save-modal').addEventListener('click', e => {
+			if (!e.target.closest('div')) {
+				e.target.close();
+			}
+		})
+
 		document.addEventListener('keydown', e => {
+			if (document.activeElement.matches('[type="text"]')) return;
+
 			if (e.code.startsWith('Digit')) {
 				const number = e.code.slice(5) - 1;
 
@@ -1196,7 +1456,11 @@
 
 					document.documentElement.style.setProperty('--current-angle', `${ brush.angle }deg`);
 					document.getElementById('angle').value = brush.angle;
+
+					brushPreview.dataset.angle = brush.angle;
 				}
+			} else if (e.code === 'KeyS' && e.shiftKey) {
+				document.getElementById('r-skip').click();
 			} else if (e.code === 'KeyO') {
 				document.getElementById('onion-skin').click();
 			} else if (e.code === 'KeyH') {
@@ -1205,6 +1469,8 @@
 				document.getElementById('gridlines').click();
 			} else if (e.code === 'KeyB') {
 				document.querySelector('#tools [value="brush"]').click();
+			} else if (e.code === 'KeyE') {
+				document.querySelector('#tools [value="erase"]').click();
 			} else if (e.code === 'KeyR') {
 				document.querySelector('#tools [value="rectangle"]').click();
 			} else if (e.code === 'KeyC') {
@@ -1222,11 +1488,19 @@
 			e.preventDefault();
 		});
 
-		gridElm.addEventListener('mouseover', e => {
+		gridElm.addEventListener('pointerout', e => {
+			document.getElementById('brush-preview')?.remove();
+		});
+
+		gridElm.addEventListener('pointerover', e => {
+			console.log('hoi');
+
+			e.target.appendChild(brushPreview);
+
 			if (mode && tool === 'brush') {
-				paintCell(e.target);
-			} else if (rectangleStart) {
-				drawRectangle(e.target.closest('.grid-cell'));			
+				paintCell(e.target.children[brush.layer]);
+			} else if (shape.start) {
+				drawRectangle(e.target);
 			}
 		});
 
@@ -1237,6 +1511,8 @@
 		document.getElementById('invert').addEventListener('change', e => {
 			brush.invert = e.target.checked ? 1 : 0;
 			document.documentElement.style.setProperty('--current-invert', brush.invert ? 'invert(100%)' : 'none');
+
+			brushPreview.dataset.invert = brush.invert;
 		});
 
 		document.getElementById('gridlines').addEventListener('change', e => {
@@ -1257,29 +1533,39 @@
 				brush.density = parseInt(e.target.dataset.density);
 				brush.preset = false;
 
-				document.documentElement.style.setProperty('--current-pattern', `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='${ patterns[brush.density][brush.pattern] }'/></svg>"`);
+				brushPreview.dataset.type = 'brush';
+				brushPreview.dataset.pattern = brush.pattern;
+				brushPreview.dataset.density = brush.density;
 			}
 		});
 
-		document.getElementById('presets').addEventListener('click', e => {
+		document.getElementById('presets').addEventListener('click', function(e) {
 			if (e.target.matches('input')) {
 				brush.pattern = parseInt(e.target.value);
 				brush.preset = true;
 
-				document.documentElement.style.setProperty('--current-pattern', 'foo');
+				brushPreview.dataset.type = 'preset';
+				brushPreview.innerHTML = '';
+
+				const presetLayers = this.querySelectorAll('.preset-display')[brush.pattern].children;
+
+				for (let i = 0; i < 4; i++) {
+					brushPreview.appendChild(presetLayers[i].cloneNode());
+				}
 			}
 		});
 
 		document.getElementById('angle').addEventListener('input', e => {
 			brush.angle = e.target.value;
 			document.documentElement.style.setProperty('--current-angle', `${ brush.angle }deg`);
+
+			brushPreview.dataset.angle = brush.angle;
 		});
 
 		document.getElementById('layers').addEventListener('click', function(e) {
 			if (e.target.type === 'radio') {
-				this.querySelector('.active')?.classList.remove('active');
-				e.target.parentElement.classList.add('active');
 				document.getElementById('grid').dataset.activeLayer = e.target.value;
+				brush.layer = e.target.value;
 			} else if (e.target.type === 'checkbox') {
 				document.getElementById('grid').classList.toggle(`hide-layer-${ e.target.value }`, !e.target.checked);
 			}
@@ -1287,9 +1573,10 @@
 
 		document.getElementById('tools').addEventListener('click', function(e) {
 			if (e.target.type === 'radio') {
-				this.querySelector('.active')?.classList.remove('active');
-				e.target.parentElement.classList.add('active');
 				tool = e.target.value;
+
+				shape.start = null;
+				shape.end = null;
 
 				if (tool === 'copy') {
 					document.getElementById('presets').querySelectorAll('input')[brush.pattern].click();
@@ -1313,12 +1600,49 @@
 			randomize.angle = e.target.checked;
 		});
 
-		document.getElementById('close-modal').addEventListener('click', e => {
+		document.getElementById('r-skip').addEventListener('change', e => {
+			randomize.skip = e.target.checked;
+		});
+
+		document.getElementById('close-help').addEventListener('click', () => {
 			document.getElementById('help-modal').close();
 		});
 
-		document.getElementById('save_png').addEventListener('click', save_png);
-		document.getElementById('save_svg').addEventListener('click', save_svg);
+		document.getElementById('close-save').addEventListener('click', () => {
+			document.getElementById('save-modal').close();
+		});
+
+		document.getElementById('open-save-modal').addEventListener('click', () => {
+			document.getElementById('save-modal').showModal();
+
+			const currentDate = new Date().toISOString().slice(0, 10);
+
+			document.getElementById('image-name').placeholder = `hatchery_${ currentDate }.${ image.format }`;
+		});
+
+		document.getElementById('image-name').addEventListener('input', e => {
+			image.name = e.target.value ?? null;
+		});
+
+		document.getElementById('image-format').addEventListener('click', e => {
+			if (e.target.matches('input')) {
+				image.format = e.target.value;
+
+				document.getElementById('image-name').placeholder = document.getElementById('image-name').placeholder.slice(0, -3) + image.format;
+			}
+		});
+
+		document.getElementById('image-scale').addEventListener('input', e => {
+			image.scale = e.target.value;
+		});
+
+		document.getElementById('save').addEventListener('click', function() {
+			if (image.format === 'png') {
+				save_png();
+			} else {
+				save_svg();
+			}
+		});
 
 		initGrid();
 	</script>
