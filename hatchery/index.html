@@ -193,6 +193,8 @@
 
 		.preset-container {
 			position: relative;
+			height: 14px;
+			width: 14px;
 		}
 
 		.preset-container .preset-display,
@@ -226,6 +228,14 @@
 			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m5 1h-4v4'/></svg>");
 		}
 
+		[data-pattern="4"] {
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m4 7a1 1 0 016 0 1 1 0 01-6 0'/></svg>");
+		}
+
+		[data-pattern="5"] {
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 0h12v2h-12'/></svg>");
+		}
+
 		[data-pattern="0"][data-density="1"] {
 			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m3 3h8v8h-8'/></svg>");
 		}
@@ -240,6 +250,14 @@
 
 		[data-pattern="3"][data-density="1"] {
 			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m9 1h-8v8'/></svg>");
+		}
+
+		[data-pattern="4"][data-density="1"] {
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 1a1 1 0 010 12'/></svg>");
+		}
+
+		[data-pattern="5"][data-density="1"] {
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 0h12v4h-12'/></svg>");
 		}
 
 		[data-pattern="0"][data-density="2"] {
@@ -258,9 +276,17 @@
 			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m13 1h-12v12'/></svg>");
 		}
 
+		[data-pattern="4"][data-density="2"] {
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 1a12 12 0 0112 12h-12'/></svg>");
+		}
+
+		[data-pattern="5"][data-density="2"] {
+			background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='m1 0h12v7h-12'/></svg>");
+		}
+
 		.pattern-palette {
 			display: grid;
-			grid-template-columns: repeat(4, 1fr);
+			grid-template-columns: repeat(6, 1fr);
 			gap: 6px;
 			width: min-content;
 			margin-bottom: 4px;
@@ -618,16 +644,22 @@
 				<input autocomplete="off" name="pattern" value="1" type="radio" data-pattern="1" data-density="0">
 				<input autocomplete="off" name="pattern" value="2" type="radio" data-pattern="2" data-density="0">
 				<input autocomplete="off" name="pattern" value="3" type="radio" data-pattern="3" data-density="0">
+				<input autocomplete="off" name="pattern" value="4" type="radio" data-pattern="4" data-density="0">
+				<input autocomplete="off" name="pattern" value="4" type="radio" data-pattern="5" data-density="0">
 
 				<input autocomplete="off" name="pattern" value="0" type="radio" data-pattern="0" data-density="1">
 				<input autocomplete="off" name="pattern" value="1" type="radio" data-pattern="1" data-density="1">
 				<input autocomplete="off" name="pattern" value="2" type="radio" data-pattern="2" data-density="1">
 				<input autocomplete="off" name="pattern" value="3" type="radio" data-pattern="3" data-density="1">
+				<input autocomplete="off" name="pattern" value="4" type="radio" data-pattern="4" data-density="1">
+				<input autocomplete="off" name="pattern" value="4" type="radio" data-pattern="5" data-density="1">
 
 				<input autocomplete="off" name="pattern" value="0" type="radio" data-pattern="0" data-density="2">
 				<input autocomplete="off" name="pattern" value="1" type="radio" data-pattern="1" data-density="2">
 				<input autocomplete="off" name="pattern" value="2" type="radio" data-pattern="2" data-density="2">
 				<input autocomplete="off" name="pattern" value="3" type="radio" data-pattern="3" data-density="2">
+				<input autocomplete="off" name="pattern" value="4" type="radio" data-pattern="4" data-density="2">
+				<input autocomplete="off" name="pattern" value="4" type="radio" data-pattern="5" data-density="2">
 			</div>
 
 			<div>
@@ -668,6 +700,24 @@
 							<div data-pattern="3" data-density="1" data-invert="1" data-angle="0"></div>
 							<div data-pattern="3" data-density="1" data-invert="1" data-angle="180"></div>
 							<div></div>
+						</div>
+					</div>
+					<div class="preset-container">
+						<input autocomplete="off" name="pattern" value="4" type="radio">
+						<div class="preset-display">
+							<div data-pattern="0" data-density="2" data-invert="1" data-angle="0"></div>
+							<div data-pattern="4" data-density="1" data-invert="0" data-angle="0"></div>
+							<div data-pattern="4" data-density="1" data-invert="0" data-angle="180"></div>
+							<div data-pattern="4" data-density="0" data-invert="1" data-angle="0"></div>
+						</div>
+					</div>
+					<div class="preset-container">
+						<input autocomplete="off" name="pattern" value="5" type="radio">
+						<div class="preset-display">
+							<div data-pattern="0" data-density="2" data-invert="1" data-angle="0"></div>
+							<div data-pattern="5" data-density="0" data-invert="0" data-angle="0"></div>
+							<div data-pattern="5" data-density="0" data-invert="0" data-angle="180"></div>
+							<div data-pattern="2" data-density="0" data-invert="0" data-angle="0"></div>
 						</div>
 					</div>
 				</div>
@@ -803,7 +853,7 @@
 			<table>
 				<tbody>
 					<tr>
-						<td><kbd>1</kbd> - <kbd>4</kbd></td>
+						<td><kbd>1</kbd> - <kbd>6</kbd></td>
 						<td>Set pattern type</td>
 					</tr>
 					<tr>
@@ -829,7 +879,7 @@
 						<td>Toggle between patterns and presets</td>
 					</tr>
 					<tr>
-						<td><kbd>1</kbd> - <kbd>4</kbd></td>
+						<td><kbd>1</kbd> - <kbd>6</kbd></td>
 						<td>Set preset type</td>
 					</tr>
 				</tbody>
@@ -975,97 +1025,149 @@
 		const presets = [
 			[
 				{
-					pattern: "0",
-					density: "2",
-					invert: "0",
-					angle: "0"
+					pattern: '0',
+					density: '2',
+					invert: '0',
+					angle: '0'
 				},
 				{
-					pattern: "0",
-					density: "1",
-					invert: "1",
-					angle: "0"
+					pattern: '0',
+					density: '1',
+					invert: '1',
+					angle: '0'
 				},
 				{
-					pattern: "0",
-					density: "0",
-					invert: "0",
-					angle: "0"
+					pattern: '0',
+					density: '0',
+					invert: '0',
+					angle: '0'
+				},
+				null
+			],
+			[
+				{
+					pattern: '2',
+					density: '1',
+					invert: '0',
+					angle: '270'
+				},
+				{
+					pattern: '3',
+					density: '1',
+					invert: '1',
+					angle: '270'
+				},
+				{
+					pattern: '3',
+					density: '1',
+					invert: '1',
+					angle: '180'
+				},
+				{
+					pattern: '2',
+					density: '0',
+					invert: '0',
+					angle: '270'
+				}
+			],
+			[
+				{
+					pattern: '1',
+					density: '1',
+					invert: '0',
+					angle: '180'
+				},
+				{
+					pattern: '1',
+					density: '1',
+					invert: '0',
+					angle: '270'
+				},
+				{
+					pattern: '2',
+					density: '1',
+					invert: '0',
+					angle: '270'
+				},
+				{
+					pattern: '2',
+					density: '1',
+					invert: '0',
+					angle: '0'
+				}
+			],
+			[
+				{
+					pattern: '0',
+					density: '2',
+					invert: '0',
+					angle: '0'
+				},
+				{
+					pattern: '3',
+					density: '1',
+					invert: '1',
+					angle: '0'
+				},
+				{
+					pattern: '3',
+					density: '1',
+					invert: '1',
+					angle: '180'
 				},
 				null
 			],
 			[
 				{
-					pattern: "2",
-					density: "1",
-					invert: "0",
-					angle: "270"
+					pattern: '0',
+					density: '2',
+					invert: '1',
+					angle: '0'
 				},
 				{
-					pattern: "3",
-					density: "1",
-					invert: "1",
-					angle: "270"
+					pattern: '4',
+					density: '1',
+					invert: '0',
+					angle: '0'
 				},
 				{
-					pattern: "3",
-					density: "1",
-					invert: "1",
-					angle: "180"
+					pattern: '4',
+					density: '1',
+					invert: '0',
+					angle: '180'
 				},
 				{
-					pattern: "2",
-					density: "0",
-					invert: "0",
-					angle: "270"
+					pattern: '4',
+					density: '0',
+					invert: '1',
+					angle: '0'
 				}
 			],
 			[
 				{
-					pattern: "1",
-					density: "1",
-					invert: "0",
-					angle: "180"
+					pattern: '0',
+					density: '2',
+					invert: '1',
+					angle: '0'
 				},
 				{
-					pattern: "1",
-					density: "1",
-					invert: "0",
-					angle: "270"
+					pattern: '5',
+					density: '0',
+					invert: '0',
+					angle: '0'
 				},
 				{
-					pattern: "2",
-					density: "1",
-					invert: "0",
-					angle: "270"
+					pattern: '5',
+					density: '0',
+					invert: '0',
+					angle: '180'
 				},
 				{
-					pattern: "2",
-					density: "1",
-					invert: "0",
-					angle: "0"
+					pattern: '2',
+					density: '0',
+					invert: '0',
+					angle: '0'
 				}
-			],
-			[
-				{
-					pattern: "0",
-					density: "2",
-					invert: "0",
-					angle: "0"
-				},
-				{
-					pattern: "3",
-					density: "1",
-					invert: "1",
-					angle: "0"
-				},
-				{
-					pattern: "3",
-					density: "1",
-					invert: "1",
-					angle: "180"
-				},
-				null
 			]
 		];
 
@@ -1329,10 +1431,10 @@
 
 			svgElm.appendChild(group);
 
-			var svgUrl = URL.createObjectURL(new Blob([svgElm.outerHTML], {type: "image/svg+xml;charset=utf-8"}));
+			var svgUrl = URL.createObjectURL(new Blob([svgElm.outerHTML], {type: 'image/svg+xml;charset=utf-8'}));
 
 			const currentDate = new Date().toISOString().slice(0, 10);
-			const link = document.createElement("a");
+			const link = document.createElement('a');
 
 			link.href = svgUrl;
 			link.download = `${ image.name ?? `hatchery_${ currentDate }` }.png`;
@@ -1493,11 +1595,9 @@
 		});
 
 		gridElm.addEventListener('pointerover', e => {
-			console.log('hoi');
-
 			e.target.appendChild(brushPreview);
 
-			if (mode && tool === 'brush') {
+			if (mode && (tool === 'brush' || tool === 'erase')) {
 				paintCell(e.target.children[brush.layer]);
 			} else if (shape.start) {
 				drawRectangle(e.target);
