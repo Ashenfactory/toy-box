@@ -23,7 +23,6 @@
 
 		.main {
 			background: #999;
-			overflow: hidden;
 			padding: 8px;
 			border-radius: 16px;
 			position: relative;
@@ -54,6 +53,10 @@
 			margin-left: 38px;
 		}
 
+		.row:last-child {
+			margin-bottom: 2px;
+		}
+
 		.row > div {
 			height: 60px;
 			width: 60px;
@@ -61,6 +64,10 @@
 			border-radius: 50%;
 			transition: opacity .25s ease-out, transform .25s ease-out, background .2s ease;
 			outline: 4px solid #666;
+		}
+
+		.row > div:last-child {
+			margin-right: 4px;
 		}
 
 		.bubble {
@@ -154,7 +161,7 @@
 				});
 			}
 
-			navigator.vibrate(200);
+			navigator.vibrate(100);
 
 			element.className = 'pop';
 		}
@@ -168,8 +175,10 @@
 		}
 
 		const bubbleSize = 80;
-		const colCount = Math.floor((Math.max(innerWidth, screen.width) - (bubbleSize / 2)) / bubbleSize);
+		const colCount = Math.floor((Math.max(innerWidth, screen.width) - bubbleSize) / bubbleSize);
 		const rowCount = Math.floor((Math.max(innerHeight, screen.height) - (bubbleSize / 2)) / bubbleSize);
+
+		console.log(colCount);
 
 		const main = document.getElementById('main');
 
@@ -177,9 +186,7 @@
 			const row = document.createElement('div');
 			row.className = 'row';
 
-			const bubbleCount = i % 2 ? colCount : colCount + 1;
-
-			for (let j = 0; j < bubbleCount; j++) {
+			for (let j = 0; j < colCount; j++) {
 				const bubble = document.createElement('div');
 				bubble.className = 'bubble';
 				bubble.style = `filter: brightness(${ Math.random() * 15 + 85}%); rotate: ${ Math.random() * 360 }deg`;
