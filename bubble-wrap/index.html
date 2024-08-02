@@ -1,0 +1,236 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Bubble Wrap</title>
+	<style>
+		body,
+		html {
+			height: 100%;
+			width: 100%;
+			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			background: #000;
+			display: flex;
+			font-family: system-ui, sans-serif;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.main {
+			background: #999;
+			overflow: hidden;
+			padding: 8px;
+			border-radius: 16px;
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			width: fit-content;
+			border: 3px solid #666;
+		}
+
+		.main::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			display: block;
+			width: 100%;
+			height: 100%;
+			filter: blur(2px);
+			background-image: url("data:image/svg+xml,<svg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'><filter id='noiseFilter'><feTurbulence type='fractalNoise' baseFrequency='2'/></filter><rect width='100' height='100' filter='url(%23noiseFilter)'/></svg>");
+		}
+
+		.row {
+			display: flex;
+			width: fit-content;
+		}
+
+		.row:nth-child(even) {
+			margin-left: 38px;
+		}
+
+		.row > div {
+			height: 60px;
+			width: 60px;
+			margin: 4px 12px 2px 4px;
+			border-radius: 50%;
+			transition: opacity .25s ease-out, transform .25s ease-out, background .2s ease;
+			outline: 4px solid #666;
+		}
+
+		.bubble {
+			position: relative;
+			background-color: #aaa;
+			background-image: url("data:image/svg+xml,<svg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'><filter id='noiseFilter'><feTurbulence type='fractalNoise' baseFrequency='1'/></filter><rect width='20' height='20' filter='url(%23noiseFilter)'/></svg>");
+			cursor: pointer;
+		}
+
+		.bubble::after,
+		.bubble::before {
+			position: absolute;
+			content: '';
+			border-radius: 50%;
+			filter: blur(1px);
+		}
+
+		.bubble::after {
+			width: 40%;
+			height: 40%;
+			top: 30%;
+			left: 50%;
+			background: #fff4;
+		}
+
+		.bubble::before {
+			width: 75%;
+			height: 75%;
+			top: 7%;
+			left: 7%;
+			background: #fff3;
+		}
+
+		.bubble:hover {
+			background-color: #888;
+		}
+
+		.pop {
+			pointer-events: none;
+			background-color: #000;
+			opacity: .3;
+			transform: scale(1.2);
+		}
+	</style>
+</head>
+<body>
+	<div id="main" class="main">		
+	</div>
+
+	<script>
+		const sampleBuffer = {};
+
+		const sfxs = [
+			{name: 'pop', data: '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VVVVVVVVVVVVVVVVVf/7kMTxgCf+I0v5zQBCGCQoP7CAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7EMTUg8AAAaQAAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'}
+		];
+
+		let audioCtx;
+
+		let holding = 0;
+
+		async function setupAudio() {
+			audioCtx = new AudioContext({
+				latencyHint: 'interactive',
+				sampleRate: 44100
+			});
+
+			const decodePromises = sfxs.map(sfx => {
+				const binaryString = atob(sfx.data);
+				const bytes = new Uint8Array(binaryString.length);
+
+				for (let i = 0; i < binaryString.length; i++) {
+					bytes[i] = binaryString.charCodeAt(i);
+				}
+
+				return audioCtx.decodeAudioData(bytes.buffer);
+			})
+
+			return Promise.all(decodePromises).then(decodedBuffers => {
+				sfxs.forEach((sfx, index) => {
+					sampleBuffer[sfx.name] = decodedBuffers[index];
+				});
+			});
+		}
+
+		function handleBubblePop(element) {
+			if (audioCtx) {
+				playPopSfx();
+			} else {
+				setupAudio().then(() => {
+					playPopSfx();
+				});
+			}
+
+			navigator.vibrate(200);
+
+			element.className = 'pop';
+		}
+
+		function playPopSfx() {
+			const source = audioCtx.createBufferSource();
+			source.buffer = sampleBuffer.pop;
+			source.playbackRate.value = 1 + (Math.random() * 0.5 - 0.25);
+			source.connect(audioCtx.destination);
+			source.start(0);
+		}
+
+		const bubbleSize = 80;
+		const colCount = Math.floor((Math.max(innerWidth, screen.width) - (bubbleSize / 2)) / bubbleSize);
+		const rowCount = Math.floor((Math.max(innerHeight, screen.height) - (bubbleSize / 2)) / bubbleSize);
+
+		const main = document.getElementById('main');
+
+		for (let i = 0; i < rowCount; i++) {
+			const row = document.createElement('div');
+			row.className = 'row';
+
+			const bubbleCount = i % 2 ? colCount : colCount + 1;
+
+			for (let j = 0; j < bubbleCount; j++) {
+				const bubble = document.createElement('div');
+				bubble.className = 'bubble';
+				bubble.style = `filter: brightness(${ Math.random() * 15 + 85}%); rotate: ${ Math.random() * 360 }deg`;
+
+				row.appendChild(bubble);
+			}
+
+			main.appendChild(row);
+		}
+
+		const bubbles = main.getElementsByClassName('bubble');
+
+		document.addEventListener('pointerdown', e => {
+			holding = true;
+
+			if (e.target.matches('.bubble')) {
+				handleBubblePop(e.target);
+			}
+		});
+
+		main.addEventListener('pointerover', e => {
+			if (e.target.matches('.bubble') && holding) {
+				handleBubblePop(e.target);
+			}
+		});
+
+		document.addEventListener('contextmenu', e => {
+			e.preventDefault();
+		});
+
+		document.addEventListener('pointerup', e => {
+			holding = false;
+		});
+
+		document.addEventListener('pointercancel', e => {
+			holding = false;
+		});
+
+		const pressedKeys = new Set();
+
+		document.addEventListener('keydown', e => {
+			if (!pressedKeys.has(e.key) && e.key !== ' ' && e.key.length === 1) {
+				pressedKeys.add(e.key);
+
+				handleBubblePop(bubbles[Math.floor(Math.random() * bubbles.length)]);
+			}
+		});
+
+		document.addEventListener('keyup', e => {
+			pressedKeys.delete(e.key);
+		});
+	</script>
+</body>
+</html>
