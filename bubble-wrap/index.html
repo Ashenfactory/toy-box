@@ -232,7 +232,9 @@
 			if (!pressedKeys.has(e.key) && e.key !== ' ' && e.key.length === 1) {
 				pressedKeys.add(e.key);
 
-				handleBubblePop(bubbles[Math.floor(Math.random() * bubbles.length)]);
+				if (bubbles.length) {
+					handleBubblePop(bubbles[Math.floor(Math.random() * bubbles.length)]);
+				}
 			}
 		});
 
