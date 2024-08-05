@@ -4,6 +4,8 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Bubble Wrap</title>
+	<link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 15'><path fill='%23aaa' stroke='%23444' d='M1 3a1 1 0 0 0 4 0 1 1 0 0 0-4 0m3 3a1 1 0 0 0 4 0 1 1 0 0 0-4 0m3-3a1 1 0 0 0 4 0 1 1 0 0 0-4 0M1 9a1 1 0 0 0 4 0 1 1 0 0 0-4 0m6 0a1 1 0 0 0 4 0 1 1 0 0 0-4 0m3-3a1 1 0 0 0 4 0 1 1 0 0 0-4 0m-6 6a1 1 0 0 0 4 0 1 1 0 0 0-4 0m6 0a1 1 0 0 0 4 0 1 1 0 0 0-4 0'/></svg>">
+
 	<style>
 		body,
 		html {
@@ -17,11 +19,10 @@
 			background: #000;
 			display: flex;
 			font-family: system-ui, sans-serif;
-			align-items: center;
-			justify-content: center;
 		}
 
 		.main {
+			margin: auto;
 			background: #999;
 			padding: 8px;
 			border-radius: 16px;
@@ -29,8 +30,13 @@
 			display: flex;
 			flex-direction: column;
 			width: fit-content;
+			height: fit-content;
 			border: 3px solid #666;
 			touch-action: pinch-zoom;
+		}
+
+		.main:active {
+			cursor: pointer;
 		}
 
 		.main::before {
@@ -41,8 +47,9 @@
 			display: block;
 			width: 100%;
 			height: 100%;
-			filter: blur(2px);
-			background-image: url("data:image/svg+xml,<svg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'><filter id='noiseFilter'><feTurbulence type='fractalNoise' baseFrequency='2'/></filter><rect width='100' height='100' filter='url(%23noiseFilter)'/></svg>");
+			filter: blur(1px);
+			background-image: url("data:image/svg+xml,<svg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'><filter id='a'><feTurbulence type='fractalNoise' baseFrequency='1'/></filter><rect width='20' height='20' filter='url(%23a)'/></svg>");
+			background-size: 60px;
 		}
 
 		.row {
@@ -63,8 +70,9 @@
 			width: 60px;
 			margin: 4px 12px 2px 4px;
 			border-radius: 50%;
-			transition: opacity .25s ease-out, transform .25s ease-out, background .2s ease;
-			outline: 4px solid #666;
+			transition: transform .25s ease-out, filter .25s ease-out, background .2s ease;
+			outline: 4px solid #6669;
+			background-color: #aaa3;
 		}
 
 		.row > div:last-child {
@@ -72,21 +80,21 @@
 		}
 
 		.bubble {
+			background-image: url("data:image/svg+xml,<svg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'><filter id='a'><feTurbulence type='fractalNoise' baseFrequency='1'/></filter><rect width='20' height='20' filter='url(%23a)'/></svg>");
 			position: relative;
-			background-color: #aaa;
-			background-image: url("data:image/svg+xml,<svg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'><filter id='noiseFilter'><feTurbulence type='fractalNoise' baseFrequency='1'/></filter><rect width='20' height='20' filter='url(%23noiseFilter)'/></svg>");
 			cursor: pointer;
 		}
 
-		.bubble::after,
-		.bubble::before {
+		.row > div::after,
+		.row > div::before {
 			position: absolute;
 			content: '';
 			border-radius: 50%;
 			filter: blur(1px);
+			transition: all .25s ease-out;
 		}
 
-		.bubble::after {
+		.row > div::after {
 			width: 40%;
 			height: 40%;
 			top: 30%;
@@ -94,7 +102,7 @@
 			background: #fff4;
 		}
 
-		.bubble::before {
+		.row > div::before {
 			width: 75%;
 			height: 75%;
 			top: 7%;
@@ -108,14 +116,20 @@
 
 		.pop {
 			pointer-events: none;
-			background-color: #000;
-			opacity: .3;
 			transform: scale(1.2);
+			outline-color: #ccc3;
+		}
+
+		.pop::before,
+		.pop::after {
+			filter: blur(2px);
+			transform: scale(2);
+			opacity: 0;
 		}
 	</style>
 </head>
 <body>
-	<div id="main" class="main">		
+	<div id="main" class="main">
 	</div>
 
 	<script>
@@ -153,7 +167,7 @@
 			});
 		}
 
-		function handleBubblePop(element) {
+		function handleBubblePop(e) {
 			if (audioCtx) {
 				playPopSfx();
 			} else {
@@ -164,7 +178,8 @@
 
 			navigator.vibrate(100);
 
-			element.className = 'pop';
+			e.style.filter = `brightness(${ e.style.filter.slice(11, 13) / 2}%) blur(2px)`;
+			e.className = 'pop';
 		}
 
 		function playPopSfx() {
@@ -179,8 +194,6 @@
 		const colCount = Math.floor((Math.max(innerWidth, screen.width) - bubbleSize) / bubbleSize);
 		const rowCount = Math.floor((Math.max(innerHeight, screen.height) - (bubbleSize / 2)) / bubbleSize);
 
-		console.log(colCount);
-
 		const main = document.getElementById('main');
 
 		for (let i = 0; i < rowCount; i++) {
@@ -190,7 +203,8 @@
 			for (let j = 0; j < colCount; j++) {
 				const bubble = document.createElement('div');
 				bubble.className = 'bubble';
-				bubble.style = `filter: brightness(${ Math.random() * 15 + 85}%); rotate: ${ Math.random() * 360 }deg`;
+				bubble.style.filter = `brightness(${ Math.floor((Math.random() * 15 + 85 )) }%)`;
+				bubble.style.rotate = `${ Math.random() * 360 }deg`;
 
 				row.appendChild(bubble);
 			}
@@ -214,15 +228,26 @@
 			}
 		});
 
+		main.addEventListener('touchmove', e => {
+			for (let i = e.touches.length - 1; i >= 0; i--) {
+				const touch = e.touches[i];
+				const element = document.elementFromPoint(touch.clientX, touch.clientY);
+
+				if (element.matches('.bubble')) {
+					handleBubblePop(element);
+				}
+			}
+		});
+
 		document.addEventListener('contextmenu', e => {
 			e.preventDefault();
 		});
 
-		document.addEventListener('pointerup', e => {
+		document.addEventListener('pointerup', () => {
 			holding = false;
 		});
 
-		document.addEventListener('pointercancel', e => {
+		document.addEventListener('pointercancel', () => {
 			holding = false;
 		});
 
@@ -241,6 +266,14 @@
 		document.addEventListener('keyup', e => {
 			pressedKeys.delete(e.key);
 		});
+
+		function adjustRotation() {
+			document.body.style.transform = `rotate(${ screen.orientation.angle }deg)`;
+		}
+
+		screen.orientation.addEventListener('change', adjustRotation);
+
+		adjustRotation();
 	</script>
 </body>
 </html>
