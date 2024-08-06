@@ -2,17 +2,23 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 	<title>Bubble Wrap</title>
 	<link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 15'><path fill='%23aaa' stroke='%23444' d='M1 3a1 1 0 0 0 4 0 1 1 0 0 0-4 0m3 3a1 1 0 0 0 4 0 1 1 0 0 0-4 0m3-3a1 1 0 0 0 4 0 1 1 0 0 0-4 0M1 9a1 1 0 0 0 4 0 1 1 0 0 0-4 0m6 0a1 1 0 0 0 4 0 1 1 0 0 0-4 0m3-3a1 1 0 0 0 4 0 1 1 0 0 0-4 0m-6 6a1 1 0 0 0 4 0 1 1 0 0 0-4 0m6 0a1 1 0 0 0 4 0 1 1 0 0 0-4 0'/></svg>">
 
 	<style>
+		:root {
+			--columns: 1;
+		}
+
 		body,
 		html {
 			height: 100%;
 			width: 100%;
 			margin: 0;
 			padding: 0;
+			user-select: none;
+			touch-action: none;
 		}
 
 		body {
@@ -24,15 +30,12 @@
 		.main {
 			margin: auto;
 			background: #999;
-			padding: 8px;
+			padding: 8px 38px 10px 8px;
 			border-radius: 16px;
 			position: relative;
-			display: flex;
-			flex-direction: column;
-			width: fit-content;
-			height: fit-content;
+			display: grid;
+			grid-template-columns: repeat(var(--columns), 1fr);
 			border: 3px solid #666;
-			touch-action: pinch-zoom;
 		}
 
 		.main:active {
@@ -52,20 +55,7 @@
 			background-size: 60px;
 		}
 
-		.row {
-			display: flex;
-			width: fit-content;
-		}
-
-		.row:nth-child(even) {
-			margin-left: 38px;
-		}
-
-		.row:last-child {
-			margin-bottom: 2px;
-		}
-
-		.row > div {
+		.main > div {
 			height: 60px;
 			width: 60px;
 			margin: 4px 12px 2px 4px;
@@ -73,10 +63,7 @@
 			transition: transform .25s ease-out, filter .25s ease-out, background .2s ease;
 			outline: 4px solid #6669;
 			background-color: #aaa3;
-		}
-
-		.row > div:last-child {
-			margin-right: 4px;
+			box-shadow: #0008 0 0 10px;
 		}
 
 		.bubble {
@@ -85,8 +72,8 @@
 			cursor: pointer;
 		}
 
-		.row > div::after,
-		.row > div::before {
+		.main > div::after,
+		.main > div::before {
 			position: absolute;
 			content: '';
 			border-radius: 50%;
@@ -94,7 +81,7 @@
 			transition: all .25s ease-out;
 		}
 
-		.row > div::after {
+		.main > div::after {
 			width: 40%;
 			height: 40%;
 			top: 30%;
@@ -102,7 +89,7 @@
 			background: #fff4;
 		}
 
-		.row > div::before {
+		.main > div::before {
 			width: 75%;
 			height: 75%;
 			top: 7%;
@@ -140,8 +127,7 @@
 		];
 
 		let audioCtx;
-
-		let holding = 0;
+		let holding = false;
 
 		async function setupAudio() {
 			audioCtx = new AudioContext({
@@ -167,6 +153,10 @@
 			});
 		}
 
+		function mapBrightnessRange(x) {
+			return Math.floor((x - 85) * 50 / 15 + 40);
+		}
+
 		function handleBubblePop(e) {
 			if (audioCtx) {
 				playPopSfx();
@@ -178,7 +168,8 @@
 
 			navigator.vibrate(100);
 
-			e.style.filter = `brightness(${ e.style.filter.slice(11, 13) / 2}%) blur(2px)`;
+			e.style.filter = `brightness(${ mapBrightnessRange(e.style.filter.slice(11, 13)) }%) blur(2px)`;
+
 			e.className = 'pop';
 		}
 
@@ -191,25 +182,29 @@
 		}
 
 		const bubbleSize = 80;
-		const colCount = Math.floor((Math.max(innerWidth, screen.width) - bubbleSize) / bubbleSize);
-		const rowCount = Math.floor((Math.max(innerHeight, screen.height) - (bubbleSize / 2)) / bubbleSize);
+		const colCount = Math.max(Math.floor((Math.max(innerWidth, screen.width) - bubbleSize) / bubbleSize), 1);
+		const rowCount = Math.max(Math.floor((Math.max(innerHeight, screen.height) - (bubbleSize / 2)) / bubbleSize), 1);
+
+		document.documentElement.style.setProperty('--columns', colCount);
 
 		const main = document.getElementById('main');
 
 		for (let i = 0; i < rowCount; i++) {
-			const row = document.createElement('div');
-			row.className = 'row';
-
 			for (let j = 0; j < colCount; j++) {
 				const bubble = document.createElement('div');
+
 				bubble.className = 'bubble';
 				bubble.style.filter = `brightness(${ Math.floor((Math.random() * 15 + 85 )) }%)`;
+
+				if (i % 2 === 1) {
+					bubble.style.translate = '38px';
+				}
+
 				bubble.style.rotate = `${ Math.random() * 360 }deg`;
 
-				row.appendChild(bubble);
-			}
 
-			main.appendChild(row);
+				main.appendChild(bubble);
+			}
 		}
 
 		const bubbles = main.getElementsByClassName('bubble');
@@ -267,13 +262,24 @@
 			pressedKeys.delete(e.key);
 		});
 
-		function adjustRotation() {
-			document.body.style.transform = `rotate(${ screen.orientation.angle }deg)`;
+		const initialAngle = screen.orientation.angle;
+
+		screen.orientation.addEventListener('change', e => {
+			updateColumn(e.target.angle);
+		});
+
+		function updateColumn(angle) {
+			const derivedAngle = Math.abs(initialAngle - angle);
+			let derivedColCount = derivedAngle === 90 || derivedAngle === 270 ? rowCount : colCount;
+
+			document.documentElement.style.setProperty('--columns', derivedColCount);
+
+			main.querySelectorAll('div').forEach((elm, i) => {
+				const row = Math.floor(i / derivedColCount);
+
+				elm.style.translate = row % 2 === 1 ? '38px' : '';
+			});
 		}
-
-		screen.orientation.addEventListener('change', adjustRotation);
-
-		adjustRotation();
 	</script>
 </body>
 </html>
