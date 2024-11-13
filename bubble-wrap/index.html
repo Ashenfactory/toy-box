@@ -166,7 +166,9 @@
 				});
 			}
 
-			navigator.vibrate(100);
+			if ("vibrate" in navigator) {
+				navigator.vibrate(100);
+			}
 
 			e.style.filter = `brightness(${ mapBrightnessRange(e.style.filter.slice(11, 13)) }%) blur(2px)`;
 
