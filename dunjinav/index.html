@@ -1,0 +1,2474 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000">
+<meta name="og:type" content="website">
+<meta name="og:site_name" content="Dungeon Mapper">
+<meta name="description" content="Dungeon Mapper is a grid-based tool for creating, saving and navigating game maps, with a focus on old-school dungeon crawlers. It strives for intuitive controls and broad applicability">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Cpath%20stroke='%23666'%20d='M2%202h12v12H2Z'/%3E%3Cpath%20fill='%23f069c3'%20d='M3%204h3v9H3'/%3E%3Cpath%20fill='%23c04774'%20d='M6%2013h3V6H6'/%3E%3Cpath%20fill='%238f2525'%20d='M9%2013h3V8H9'/%3E%3C/svg%3E">
+<title>Dungeon Mapper</title>
+<style>
+	body {
+		margin: 0;
+		padding: 0;
+		height: 100vh;
+		background-color: #000;
+		color: #fff;
+		overflow: hidden;
+		display: flex;
+		flex-direction: row;
+		user-select: none;
+	}
+
+	body,
+	input,
+	button,
+	select,
+	option,
+	textarea,
+	label {
+		font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+		font-size: 12px;
+	}
+
+	body::before,
+	body::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		height: 100%;
+		width: 100%;
+		z-index: -1;
+		filter: blur(100px);
+	}
+
+	.dungeon-container .target td,
+	.target td div {
+		cursor: crosshair;
+	}
+
+	textarea {
+		margin-block: 0;
+		resize: none;
+	}
+
+	button {
+		width: fit-content;
+		background: #0096c7;
+		font-weight: 700;
+		color: #fff;
+		cursor: pointer;
+	}
+
+	button:hover {
+		opacity: .8;
+	}
+
+	button.active {
+		background: #f72585;
+	}
+
+	button[disabled] {
+		opacity: .5;
+		cursor: auto;
+	}
+
+	select,
+	input,
+	textarea {
+		background: #fff;
+	}
+
+	select {
+		cursor: pointer;
+		appearance: none;
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><path d='M6 3 4 5 2 3' fill='none' stroke='%23000'/></svg>");
+		background-size: 16px 16px;
+		background-repeat: no-repeat;
+		background-position: right;
+	}
+
+	.checkbox {
+		margin-top: 4px;
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.checkbox input {
+		display: none;
+	}
+
+	.checkbox span {
+		cursor: pointer;
+		width: 16px;
+		height: 16px;
+		display: inline-block;
+		background-color: #fff;
+		margin-right: 4px;
+		position: relative;
+	}
+
+	.checkbox input:checked + span {
+		background-color: #f72585;
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><path d='M7 2 3 6 1 4' fill='none' stroke='%23fff'/></svg>");
+	}
+
+	input::-webkit-outer-spin-button,
+	input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+
+	input[type="number"] {
+		-moz-appearance: textfield;
+		width: 3rem;
+		text-align: right;
+	}
+
+	textarea {
+		appearance: none;
+	}
+
+	select,
+	button,
+	input,
+	textarea {
+		line-height: 16px;
+		padding: 4px 6px;
+		border: none;
+		border-radius: 0;
+	}
+
+	input[disabled] {
+		background-color: #222;
+		color: #444;
+	}
+
+	select:focus,
+	button:focus,
+	input:focus,
+	textarea:focus {
+		outline: 2px solid #f72585;
+	}
+
+	body::before {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 15'><path fill='%2339254d' d='M1 3a1 1 0 006 2 1 1 0 00-6-2m7-2a1 1 0 005 2 1 1 0 00-5-2M7 15a1 1 0 00-7-7 1 1 0 007 7m3-3a1 1 0 005 2 1 1 0 00-5-2m0-3a1 1 0 007-4 1 1 0 00-7 4M7 7a1 1 0 002 0 1 1 0 00-2 0'/></svg>");
+		background-size: cover;
+		opacity: .6;
+	}
+
+	body::after {
+		background: linear-gradient(353deg, #2b361a64 0%, #0000 95%);
+	}
+
+	.form-container {
+		display: flex;
+		flex-direction: column;
+		overflow: auto;
+		padding: 8px 16px 8px 8px;
+		background: #0008;
+	}
+
+	fieldset {
+		border: 2px solid #555;
+	}
+
+	fieldset legend {
+		line-height: 16px;
+		font-weight: 700;
+	}
+
+	.form-container fieldset {
+		padding: 8px;
+		background-color: #000;
+		display: flex;
+		flex-direction: column;
+		margin-bottom: 8px;
+		gap: 8px;
+	}
+
+	.input-container {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.input-row {
+		display: flex;
+		flex-direction: row;
+		gap: 4px;
+		width: 176px;
+	}
+
+	.input-row select,
+	.input-row input {
+		width: 100%;
+	}
+
+	.icon {
+		display: inline-block;
+		vertical-align: top;
+		width: 16px;
+		height: 16px;
+		padding: 0;
+		margin: 0;
+		margin-inline: 0;
+		padding-inline: 0;
+		line-height: 16px;
+	}
+
+	.select-icon {
+		background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path fill='none' stroke='%23fff' d='M2 5a1 1 0 006 0 1 1 0 00-6 0m3-5v4m0 2v4M0 5h4m2 0h4'/></svg>");
+	}
+
+	[data-mode="navigate"] .edit-only {
+		display: none;
+	}
+
+	[data-mode="edit"] .navigate-only {
+		display: none;
+	}
+
+	.dungeon-container {
+		flex-grow: 1;
+		display: flex;
+		position: relative;
+	}
+
+	.tooltip .header {
+		font-weight: 700;
+	}
+
+	.tooltip fieldset {
+		border-color: #fff;
+	}
+
+	.tooltip [data-category] ::first-letter {
+		text-transform: uppercase;
+	}
+
+	.table-container {
+		width: calc(100% - 128px);
+		height: calc(100% - 128px);
+		position: absolute;
+		flex-grow: 1;
+		display: flex;
+		align-items: center;
+		overflow: auto;
+		padding: 64px;
+		scroll-snap-type: both mandatory;
+	}
+
+	table {
+		background: #000;
+		margin: auto;
+		border-collapse: collapse;
+	}
+
+	td {
+		scroll-margin: 65px;
+		scroll-snap-align: center;
+		height: 32px;
+		width: 32px;
+		min-height: 32px;
+		min-width: 32px;
+		border: 1px solid #333;
+		padding: 0;
+		transition: background-color .2s ease-out;
+		position: relative;
+	}
+
+	td::before,
+	td::after {
+		content: '';
+		display: block;
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		pointer-events: none;
+		z-index: 11;
+		opacity: 0;
+		transition: opacity .2s ease-out, outline-color .2s ease-out, background-color .2s ease-out;
+	}
+
+	td.connection-highlight::before {
+		opacity: .6;
+		background: #ff0;
+		outline: 2px solid #ff0;
+	}
+
+	td.connection-highlight.hover::before {
+		background: #f0f;
+		outline-color: #f0f;
+		z-index: 20;
+	}
+
+	td.connection-highlight.above::after,
+	td.connection-highlight.below::after {
+		opacity: 1;
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><path fill='%23fff' stroke='%23000' d='m1 5 1 1 2-2 2 2 1-1-3-3Z'/></svg>");
+	}
+
+	td.connection-highlight.hover::after {
+		z-index: 20;
+	}
+
+	td.connection-highlight.below::after {
+		rotate: 180deg;
+	}
+
+	td > div {
+		opacity: 0;
+		transition: opacity .2s ease-out;
+	}
+
+	:where(td > div:not(.active):hover) {
+		cursor: pointer;
+		outline: 2px solid #fff;
+	}
+
+	:where(td > div:not(.active):hover)::before {
+		content: '';
+		display: block;
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		background-color: #fff6;
+	}
+
+	.clear {
+		background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23666' stroke='%23333' d='M2 3V2h1l5 5 5-5h1v1L9 8l5 5v1h-1L8 9l-5 5H2v-1l5-5Z'/></svg>");
+		z-index: 10;
+	}
+
+	.check-later {
+		opacity: .8;
+		background-color: red !important;
+	}
+
+	.start-position::after,
+	.connection-target::after {
+		content: '';
+		display: block;
+		height: 100%;
+		width: 100%;
+		top: 0;
+		left: 0;
+		pointer-events: none;
+		position: absolute;
+		background-color: #fff6;
+		background-repeat: no-repeat;
+		background-position: center;
+	}
+
+	.start-position::after {
+		z-index: 5;
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'><path fill='%23fffc' d='m1 2 1-2 1 2-1 1'/></svg>");
+	}
+
+	.connection-target::after {
+		z-index: 6;
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><path d='M1 4A1 1 0 007 4 1 1 0 001 4' stroke='%23f72585aa' fill='none'/></svg>");
+	}
+
+	[data-tile] {
+		background-color: #0096c7;
+		--alt-color: #00b4d8;
+	}
+
+	[data-tile="1"] {
+		background-color: #120a8f;
+		--alt-color: #190dbf;
+	}
+
+	[data-tile="2"] {
+		background-color: #0bda51;
+		--alt-color: #0dba51;
+	}
+
+	[data-tile="3"] {
+		background-color: #eed706;
+		--alt-color: #fbec5d;
+	}
+
+	[data-tile="4"] {
+		background-color: #db1d00;
+		--alt-color: #ff2400;
+	}
+
+	[data-tile="5"] {
+		background-color: #77362a;
+		--alt-color: #954535;
+	}
+
+	[data-tile="6"] {
+		background-color: #70027a;
+		--alt-color: #8d029b;
+	}
+
+	[data-tile="7"] {
+		background-color: #f872b1;
+		--alt-color: #fbaed2;
+	}
+
+	[data-tile="8"] {
+		background-color: #c6c4c0;
+		--alt-color: #e5e4e2;
+	}
+
+	[data-tile="9"] {
+		background-color: #364249;
+		--alt-color: #42525a;
+	}
+
+	table:not(.offset-color) tr:nth-child(even) td:nth-child(even) [data-tile],
+	table:not(.offset-color) tr:nth-child(odd) td:nth-child(odd) [data-tile],
+	table.offset-color tr:nth-child(even) td:nth-child(odd) [data-tile],
+	table.offset-color tr:nth-child(odd) td:nth-child(even) [data-tile] {
+		background-color: var(--alt-color);
+	}
+
+	td > div,
+	td > div > div {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
+		background-repeat: no-repeat;
+		background-position: center;
+	}
+
+	td:is([data-x$="4"], [data-x$="9"]):not([data-x^="-"]):not(:nth-last-child(2)),
+	td:is([data-x$="1"], [data-x$="6"])[data-x^="-"]:not(:nth-last-child(2)) {
+		border-right-color: #f7a3a3;
+	}
+
+	tr:not(:nth-last-child(2)) td:is([data-y$="4"], [data-y$="9"]):not([data-y^="-"]),
+	tr:not(:nth-last-child(2)) td:is([data-y$="1"], [data-y$="6"])[data-y^="-"] {
+		border-bottom-color: #f7a3a3;
+	}
+
+	tr:first-child td:not([data-tile]),
+	td:not([data-tile]):first-child,
+	tr:last-child td:not([data-tile]),
+	td:not([data-tile]):last-child {
+		border-color: transparent !important;
+		background-color: #222;
+	}
+
+	tr:first-child td:not(:first-child):not(:last-child) {
+		border-bottom: #333;
+	}
+
+	tr:not(:first-child):not(:last-child) td:first-child {
+		border-right: #333;
+	}
+
+	td div.active {
+		background-color: #f72585 !important;
+		z-index: 11 !important
+	}
+
+	.point-of-interest {
+		z-index: 3;
+	}
+
+	.point-of-interest[data-type="treasure"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23550' stroke='%23550' d='m2 7 3-3h6l3 3v7H2Z'/><path fill='%23cc6633' stroke='%23ff0' d='m6 9 1 1h2l1-1h3-3L9 8H7L6 9H3V7l2-2h6l2 2v6H3V9'/></svg>");
+	}
+
+	.point-of-interest[data-type="encounter"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path stroke-linejoin='bevel' fill='%23ff2400' stroke='%23db1d00' d='m5 14 1-5H4l3-3a2 2 0 112 0l3 3h-2l1 5-2-2H7Z'/></svg>");
+	}
+
+	.point-of-interest[data-type="npc"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path stroke-linejoin='bevel' fill='%23190dbf' stroke='%23120a8f' d='m5 14 1-5H4l3-3a2 2 0 112 0l3 3h-2l1 5-2-2H7Z'/></svg>");
+	}
+
+	.point-of-interest[data-type="event"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M6 4a1 1 0 014 0L9 9a1 1 0 11-2 0Zm1 9a1 1 0 002-1 1 1 0 00-2 1' stroke='%23cc9700' fill='%23ffbd00'/></svg>");
+	}
+
+	.point-of-interest[data-type="trap"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M6 4a1 1 0 014 0L9 9a1 1 0 11-2 0Zm1 9a1 1 0 002-1 1 1 0 00-2 1' fill='%23ff2400' stroke='%23db1d00'/></svg>");
+		z-index: 8;
+	}
+
+	.point-of-interest[data-type="note"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 3H13V11L11 13H3ZM4 5H12M4 7H11M4 9H12M4 11H9M11 13V11H13' stroke='%23666' fill='%23fff'/></svg>");
+	}
+
+	.player {
+		z-index: 5;
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'><path fill='%23fff' d='m1 2 1-2 1 2-1 1'/></svg>");
+	}
+
+	.connection {
+		z-index: 1;
+	}
+
+	.connection[data-type="stairway-up"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23c04774' stroke='%238f2525' d='M2 3h4v2h3v2h3v7H2Z'/><path fill='%23f069c3' stroke='%23f069c3' d='M3 4h2v3H3Zm3 2h2v3H6Zm3 2h2v3H9Z'/></svg>");
+	}
+
+	.connection[data-type="stairway-down"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path stroke='%23666' d='M2 2h12v12H2Z'/><path fill='%23f069c3' d='M3 4h3v9H3'/><path fill='%23c04774' d='M6 13h3V6H6'/><path fill='%238f2525' d='M9 13h3V8H9'/></svg>");
+	}
+
+	.connection[data-type^="pit"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path stroke='%23666' d='M2 8A1 1 0 0014 8 1 1 0 002 8'/><path stroke='%23444' fill='none' d='M3 8A1 1 0 0013 8 1 1 0 003 8'/></svg>");
+	}
+
+	.connection[data-type="pit-up"] {
+		z-index: 4;
+		opacity: .5;
+	}
+
+	.connection[data-type="teleport"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'><path d='M2 8a1 1 0 0012 0A1 1 0 002 8' fill='%238d029b'/><path d='m8 3-3 9 8-6H3l8 6Z' stroke='%23ff00c9' stroke-linejoin='round'/><path stroke='%2370027a' d='M2 8a1 1 0 0012 0A1 1 0 002 8'/></svg>");
+	}
+
+	td > div[data-direction] {
+		rotate: none;
+	}
+
+	[data-direction="1"],
+	td > div.start-position[data-direction="1"]::after {
+		rotate: 90deg;
+	}
+
+	[data-direction="2"],
+	td > div.start-position[data-direction="2"]::after {
+		rotate: 180deg;
+	}
+
+	[data-direction="3"],
+	td > div.start-position[data-direction="3"]::after {
+		rotate: 270deg;
+	}
+
+
+	.door {
+		z-index: 2;
+	}
+
+	.door[data-direction="4"][data-type="normal"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23cc9700' stroke='%23cc9700' d='M2 14V8a1 1 0 0112 0v6z'/><path fill='%23ffbd00' d='M3 13V8a1 1 0 0110 0v5'/></svg>");
+	}
+	.door[data-direction="4"][data-type="exit"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23120a8f' stroke='%23120a8f' d='M2 14V8a1 1 0 0112 0v6z'/><path fill='%23190dbf' d='M3 13V8a1 1 0 0110 0v5'/></svg>");
+	}
+	.door[data-direction="4"][data-type="locked"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23db1d00' stroke='%23db1d00' d='M2 14V8a1 1 0 0112 0v6z'/><path fill='%23ff2400' d='M3 13V8a1 1 0 0110 0v5'/></svg>");
+	}
+	.door[data-direction="4"][data-type="hidden"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%230abb45' stroke='%230abb45' d='M2 14V8a1 1 0 0112 0v6z'/><path fill='%230bda51' d='M3 13V8a1 1 0 0110 0v5'/></svg>");
+	}
+
+	.door[data-type="normal"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 2h12l2-2H0Z' fill='%23cc9700'/><path d='M2 0h12l-1 1H3Z' fill='%23ffbd00'/></svg>");
+	}
+
+	.door[data-type="exit"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 2h12l2-2H0Z' fill='%23120a8f'/><path d='M2 0h12l-1 1H3Z' fill='%23190dbf'/></svg>");
+	}
+
+	.door[data-type="locked"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 2h12l2-2H0Z' fill='%23db1d00'/><path d='M2 0h12l-1 1H3Z' fill='%23ff2400'/></svg>");
+	}
+
+	.door[data-type="hidden"] {
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2 2h12l2-2H0Z' fill='%230abb45'/><path d='M2 0h12l-1 1H3Z' fill='%230bda51'/></svg>");
+	}
+
+	.door[data-direction]:not([data-direction="4"])::before,
+	.door[data-direction]:not([data-direction="4"])::after {
+		content: '';
+		display: block;
+		position: absolute;
+		top: -1px;
+		width: 100%;
+		height: 1px;
+	}
+
+	.door[data-direction]:not([data-direction="4"])::after {
+		width: 75%;
+		left: 12.5%;
+	}
+
+	.door[data-type="normal"]:not([data-direction="4"])::before {
+		background-color: #cc9700;
+	}
+
+	.door[data-type="normal"]:not([data-direction="4"])::after {
+		background-color: #ffbd00;
+	}
+
+	.door[data-type="exit"]:not([data-direction="4"])::before {
+		background-color: #120a8f;
+	}
+
+	.door[data-type="exit"]:not([data-direction="4"])::after {
+		background-color: #190dbf;
+	}
+
+	.door[data-type="locked"]:not([data-direction="4"])::before {
+		background-color: #db1d00;
+	}
+
+	.door[data-type="locked"]:not([data-direction="4"])::after {
+		background-color: #ff2400;
+	}
+
+	.door[data-type="hidden"]:not([data-direction="4"])::before {
+		background-color: #0abb45;
+	}
+
+	.door[data-type="hidden"]:not([data-direction="4"])::after {
+		background-color: #0bda51;
+	}
+
+	label {
+		line-height: 16px;
+		font-weight: 400;
+		color: #fff;
+	}
+
+	.tooltip {
+		position: absolute;
+		z-index: 10;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		pointer-events: none;
+		width: 200px;
+		background-color: #000;
+		color: #fff;
+		left: -88px;
+		top: 42px;
+		transition: all .2s ease;
+		opacity: 0;
+		height: fit-content;
+		padding: 0 4px 5px;
+	}
+
+	.tooltip::before,
+	.tooltip::after {
+		content: '';
+		display: block;
+		position: absolute;
+		background-color: #fff;
+		left: 50%;
+		transform: translateX(-50%);
+		transition: all .2s ease;
+		opacity: 0;
+		height: 0;
+	}
+
+	.tooltip::before {
+		top: -30px;
+		width: 0;
+		border-radius: 50%;
+	}
+
+	.tooltip::after {
+		width: 2px;
+		top: 0;
+	}
+
+	.floor-list {
+		margin: 4px 0 0;
+		list-style: none;
+		padding-left: 15px;
+	}
+
+	.floor-list li {
+		line-height: 16px;
+		font-weight: 400;
+		cursor: pointer;
+		padding: 4px;
+		transition: background .2s ease-out;
+		margin-left: 4px;
+	}
+
+	.floor-list li:hover {
+		text-decoration: underline;
+		background-color: #00b4d8;
+	}
+
+	.floor-list .active-floor {
+		background: #f72585;
+		pointer-events: none;
+	}
+
+	.floor-list .player-floor {
+		font-weight: 700;
+	}
+
+	.floor-list .player-floor::before {
+		content: '';
+		height: 15px;
+		width: 19px;
+		display: inline-block;
+		vertical-align: bottom;
+		margin-left: -19px;
+		background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 15'><path fill='%23fff' d='m0 2 12 5-12 5'/></svg>");
+		background-repeat: no-repeat;
+	}
+
+	td div:hover .tooltip,
+	div.active .tooltip,
+	td div:hover .tooltip::after,
+	div.active .tooltip::after,
+	td div:hover .tooltip::before,
+	div.active .tooltip::before {
+		opacity: 1;
+	}
+
+	td div:hover .tooltip::after,
+	div.active .tooltip::after {
+		height: 28px;
+		top: -28px;
+		transition-delay: .2s;
+	}
+
+	td div:hover .tooltip::before,
+	div.active .tooltip::before {
+		height: 8px;
+		width: 8px;
+		transition-delay: .4s;
+	}
+
+	td:hover {
+		z-index: 20;
+	}
+
+	dialog {
+		color: #fff;
+		background: #000;
+		border: none;
+		padding: 8px;
+	}
+
+	dialog label {
+		display: block;
+		margin-top: 4px;
+		margin-bottom: 4px;
+		font-weight: bold;
+	}
+
+	dialog p {
+		margin: 0 0 16px;
+		white-space: pre-wrap;
+	}
+
+	dialog::backdrop {
+		background-color: #0006;
+	}
+
+	dialog button {
+		float: right;
+	}
+
+	kbd {
+		font-weight: 900;
+		background-color: #555;
+		padding: 2px 4px;
+	}
+
+	.controls-grid {
+		display: grid;
+		gap: 1px;
+		grid-template-columns: auto 1fr;
+		margin-bottom: 16px;
+	}
+
+	.controls-grid > div {
+		padding: 8px;
+		outline: 1px solid #fff;
+	}
+</style>
+<style id="layer-style">
+	td > div:nth-child(1) {
+		opacity: .2;
+		z-index: 10;
+		pointer-events: none;
+	}
+
+	td > div:nth-child(1) {
+		opacity: 1;
+		pointer-events: auto;
+	}
+</style>
+</head>
+
+<body data-mode="edit">
+<form class="form-container" id="dungeon-form">
+	<fieldset>
+		<legend>Help</legend>
+
+		<button id="help-controls" type="button">Controls</button>
+	</fieldset>
+
+	<fieldset>
+		<legend>Mode</legend>
+
+		<select id="mode">
+			<option value="edit" selected>Edit</option>
+			<option value="navigate">Navigate</option>
+		</select>
+	</fieldset>
+	<fieldset class="edit-only">
+		<legend>Tile</legend>
+
+		<div class="input-container">
+			<select id="tileType">
+				<option value="0" selected>Light blue</option>
+				<option value="1">Dark blue</option>
+				<option value="2">Green</option>
+				<option value="3">Yellow</option>
+				<option value="4">Red</option>
+				<option value="5">Brown</option>
+				<option value="6">Purple</option>
+				<option value="7">Pink</option>
+				<option value="8">Light grey</option>
+				<option value="9">Dark grey</option>
+			</select>
+		</div>
+	</fieldset>
+	<fieldset class="edit-only">
+		<legend>Points of interest</legend>
+		
+		<div class="input-row">
+			<select id="pointOfInterestType">
+				<option value="treasure" data-example="Potion" selected>Treasure</option>
+				<option value="encounter" data-example="Dragon">Encounter</option>
+				<option value="npc" data-example="Rowan the Smith">NPC</option>
+				<option value="event" data-example="Guard appears at F1 (5, -3)">Event</option>
+				<option value="trap" data-example="Poison dart chest">Trap</option>
+				<option value="note" data-example="Go east first">Note</option>
+			</select>
+
+			<button type="button" id="pointOfInterestButton">Add</button>
+		</div>
+
+		<div class="input-container">
+			<label for="pointOfInterestTooltip">Tooltip</label>
+			<textarea rows="2" id="pointOfInterestTooltip" placeholder="e.g. Potion"></textarea>
+		</div>
+	</fieldset>
+	<fieldset class="edit-only">
+		<legend>Doors</legend>
+
+		<div class="input-row">
+			<select id="doorType">
+				<option value="normal" data-example="To kitchen" selected>Normal</option>
+				<option value="exit" data-example="To garden">Exit</option>
+				<option value="locked" data-example="Needs green key">Locked</option>
+				<option value="hidden" data-example="15+ Spot check">Hidden</option>
+			</select>
+
+			<button type="button" id="doorButton">Add</button>
+		</div>
+
+		<div class="input-container">
+			<label for="doorDirection">Orientation</label>
+			<select id="doorDirection">
+				<option value="4" selected>Center</option>
+				<option value="0">North</option>
+				<option value="1">East</option>
+				<option value="2">South</option>
+				<option value="3">West</option>
+			</select>
+		</div>
+
+		<div class="input-container">
+			<label for="doorTooltip">Tooltip</label>
+			<textarea rows="2" id="doorTooltip" placeholder="e.g. To kitchen"></textarea>
+		</div>
+	</fieldset>
+	<fieldset class="edit-only">
+		<legend>Connections</legend>
+
+		<div class="input-row">
+			<select id="connectionType">
+				<option value="stairway" selected>Stairway</option>
+				<option value="pit">Pit</option>
+				<option value="teleport">Teleport</option>
+			</select>
+
+			<button type="button" id="connectionButton">Add</button>
+		</div>
+
+		<div class="input-container">
+			<label for="connectionTargetFloor">Target</label>
+			<div class="input-row">
+				<select id="connectionTargetFloor">
+					<option value="1" selected>F2</option>
+					<option value="0">F1</option>
+					<option value="-1">B1</option>
+				</select>
+				<input id="connectionTargetX" min="-1" max="1" step="1" type="number" value="0">
+				<input id="connectionTargetY" min="-1" max="1" step="1" type="number" value="0">
+				<button id="selectConnectionTarget" type="button"><span class="icon select-icon"></span></button>
+			</div>
+		</div>
+
+		<label class="checkbox">
+			<input type="checkbox" id="connectionUnlink">
+			<span></span> Unlink target
+		</label>
+	</fieldset>
+	<fieldset>
+		<legend>Floors</legend>
+
+		<div class="input-row edit-only">
+			<button type="button" id="addFloor">Add</button>
+			<button type="button" id="removeFloor" disabled>Remove</button>
+		</div>
+
+		<ol id="floorList" class="floor-list">
+			<li data-id="0" class="player-floor active-floor">F1</li>
+		</ol>
+
+		<div class="input-row edit-only">
+			<button type="button" id="addBasement">Add</button>
+			<button type="button" id="removeBasement" disabled>Remove</button>
+		</div>
+
+	</fieldset>
+	<fieldset>
+		<legend>Data</legend>
+
+		<div class="input-row">
+			<button type="button" id="save">Save</button>
+			<button type="button" id="load">Load</button>
+		</div>
+
+		<input type="file" id="loadFile" accept=".dungeon" hidden>
+
+		<div class="input-container">
+			<label for="dungeonName">Name</label>
+			<input type="text" id="dungeonName" placeholder="e.g. Forgotten Tunnel">
+		</div>
+
+		<div class="input-container">
+			<label for="startPositionFloor">Starting position</label>
+			<div class="input-row">
+				<button id="setStartPosition" type="button">Set current</button>
+				<button id="selectStartPosition" type="button"><span class="icon select-icon"></span></button>
+			</div>
+		</div>
+
+		<div class="input-container">
+			<label for="startDirection">Starting direction</label>			
+			<select id="startDirection">
+				<option value="0" selected>North</option>
+				<option value="1">East</option>
+				<option value="2">South</option>
+				<option value="3">West</option>
+			</select>
+		</div>
+	</fieldset>
+</form>
+
+<div class="dungeon-container">
+	<div class="table-container">
+		<table id="dungeon">
+			<tr>
+				<td data-x="-1" data-y="-1">
+					<div></div>
+				</td>
+				<td data-x="0" data-y="-1">
+					<div></div>
+				</td>
+				<td data-x="1" data-y="-1">
+					<div></div>
+				</td>
+			</tr>
+			<tr>
+				<td data-x="-1" data-y="0">
+					<div></div>
+				</td>
+				<td data-x="0" data-y="0">
+					<div class="active start-position" data-tile="0" data-direction="0">
+						<div class="player" data-direction="0"></div>
+					</div>
+				</td>
+				<td data-x="1" data-y="0">
+					<div></div>
+				</td>
+			</tr>
+			<tr>
+				<td data-x="-1" data-y="1">
+					<div></div>
+				</td>
+				<td data-x="0" data-y="1">
+					<div></div>
+				</td>
+				<td data-x="1" data-y="1">
+					<div></div>
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>
+
+<dialog id="errorDialog">
+	<fieldset>
+		<legend>Error</legend>
+		<p></p>
+		<button id="closeError">Close</button>
+	</fieldset>
+</dialog>
+
+<dialog id="helpDialog">
+	<fieldset>
+		<legend>Controls</legend>
+
+		<label>Keyboard</label>
+		<div class="controls-grid">
+			<div><kbd>↑</kbd> / <kbd>W</kbd> / <kbd>Num 8</kbd></div><div>Move forward</div>
+			<div><kbd>↓</kbd> / <kbd>S</kbd> / <kbd>Num 2</kbd></div><div>Move backward</div>
+			<div><kbd>→</kbd> / <kbd>D</kbd> / <kbd>Num 6</kbd></div><div>Turn right</div>
+			<div><kbd>←</kbd> / <kbd>A</kbd> / <kbd>Num 4</kbd></div><div>Turn left</div>
+			<div><kbd>Shift</kbd></div><div>Hold to move twice as fast</div>
+			<div><kbd>Space</kbd> / <kbd>Num 0</kbd></div><div>Use connection</div>
+			<div><kbd>X</kbd> / <kbd>Num 1</kbd></div><div>Mark current cell as cleared</div>
+			<div><kbd>C</kbd> / <kbd>Num 5</kbd></div><div>Mark adjacent cell as unexplored</div>
+		</div>
+
+		<label>Mouse</label>
+		<div class="controls-grid">
+			<div><kbd>Left click</kbd></div><div>Draw and delete tiles (Only available in "Edit" mode)</div>
+			<div><kbd>Right click</kbd></div><div>Move player to cell</div>
+		</div>
+
+		<button id="closeHelp">Close</button>
+	</fieldset>
+</dialog>
+
+<script>
+	const keysPressed = {},
+	dungeonElm = document.getElementById('dungeon'),
+	floorListElm = document.getElementById('floorList'),
+	connectionTargetFloor = document.getElementById('connectionTargetFloor'),
+	layerStyleElm = document.getElementById('layer-style');
+
+	let playerElm = dungeonElm.querySelector('.player'),
+	playerDirection = 0,
+	playerFloor = {
+		id: 0,
+		index: 0
+	},
+	activeFloor = {
+		id: 0,
+		index: 0
+	},
+	playerCell = playerElm.parentElement,
+	playerCoords = {
+		x: 0,
+		y: 0
+	},
+	dungeon = {
+		x: {
+			min: -1,
+			max: 1
+		},
+		y: {
+			min: -1,
+			max: 1
+		},
+		floors: {
+			count: 1,
+			min: 0,
+			max: 0
+		},
+		player: {
+			x: 0,
+			y: 0,
+			floor: 0,
+			direction: 0,
+		},
+		mode: 'edit'
+	},
+	moveInterval = 250,
+	tileType = 0,
+	dragging = false,
+	dragMode = false,
+	cellSelectMode = null;
+
+	function escapeHTML(str) {
+		const div = document.createElement('div');
+		div.innerText = str;
+		return div.innerHTML;
+	}
+
+	function updateDirection(clockwise) {
+		playerDirection = (playerDirection + (clockwise ? 1 : -1)) & 3;
+
+		playerElm.dataset.direction = playerDirection;
+	}
+
+	function handleMovement(forward) {
+		const direction = forward ? playerDirection : playerDirection ^ 2;
+		const targetElm = findNeighborCell(playerCoords.x, playerCoords.y, playerFloor.index, direction);
+		const targetCell = targetElm?.closest('td');
+
+		if (targetElm && (dungeon.mode === 'edit' || targetElm.dataset?.tile)) {
+			movePlayer({x: parseInt(targetCell.dataset.x), y: parseInt(targetCell.dataset.y)}, playerFloor);
+		}
+	}
+
+	function movePlayer(coords, floor) {
+		clearHighlights();
+
+		playerCell?.classList.remove('active');
+
+		playerCoords = coords;
+		playerCell = dungeonElm.querySelector(`[data-x="${playerCoords.x}"][data-y="${playerCoords.y}"]`).children[floor.index];
+
+		document.getElementById('connectionTargetX').value = playerCoords.x;
+		document.getElementById('connectionTargetY').value = playerCoords.y;
+
+		if (!playerCell.dataset?.tile) {
+			playerCell.dataset.tile = tileType;
+		}
+
+		dungeonElm.querySelector('.connection-target')?.classList.remove('connection-target');
+
+		playerCell.classList.add('active');
+		playerCell.querySelector('.check-later')?.remove();
+		playerCell.append(playerElm);
+
+		if (dungeon.mode === 'edit' && (playerCoords.x <= dungeon.x.min || playerCoords.x >= dungeon.x.max || playerCoords.y <= dungeon.y.min || playerCoords.y >= dungeon.y.max)) {
+			calculateGridSize();
+		}
+
+		if (playerCell.querySelectorAll('.connection').forEach(connection => {
+			highlightConnection(connection);
+		}));
+
+		playerCell.scrollIntoView({block: 'center', inline: 'center'});
+	}
+
+	function toggleCheck() {
+		const targetCell = findNeighborCell(playerCoords.x, playerCoords.y, playerFloor.index, playerDirection);
+
+		if (!targetCell.dataset?.tile) {
+			let checkLater = targetCell.querySelector('.check-later');
+
+			if (checkLater) {
+				checkLater.remove();
+			} else {
+				checkLater = document.createElement('div');
+				checkLater.className = 'check-later';
+
+				targetCell.append(checkLater);
+			}
+		}
+	}
+
+	function toggleClear() {
+		let clear = playerCell.querySelector('.clear');
+
+		if (clear) {
+			clear.remove();
+		} else {
+			clear = document.createElement('div');
+			clear.className = 'clear';
+
+			playerCell.append(clear);
+		}
+	}
+
+	function fitAxis(axis, addFn, removeFn) {
+		const axisMin = dungeon[axis].min;
+		const axisMax = dungeon[axis].max;
+		const queryTile = value => dungeonElm.querySelector(`[data-${axis}="${value}"] [data-tile]`);
+
+		let recalculate = false;
+
+		if (!queryTile(axisMin + 1)) {
+			removeFn(0);
+			recalculate = true;
+		} else if (queryTile(axisMin)) {
+			addFn(0);
+		}
+
+		if (!queryTile(axisMax - 1)) {
+			removeFn(-1);
+			recalculate = true;
+		} else if (queryTile(axisMax)) {
+			addFn(-1);
+		}
+
+		return recalculate;
+	}
+
+	function calculateGridSize() {
+		while(fitAxis('x', addColumn, removeColumn));
+		while(fitAxis('y', addRow, removeRow));
+
+		const connectionTargetX = document.getElementById('connectionTargetX');
+		const connectionTargetY = document.getElementById('connectionTargetY');
+
+		connectionTargetX.min = dungeon.x.min;
+		connectionTargetX.max = dungeon.x.max;
+		connectionTargetY.min = dungeon.y.min;
+		connectionTargetY.max = dungeon.y.max;
+
+		dungeonElm.classList.toggle('offset-color', (dungeon.x.min & 1) !== (dungeon.y.min & 1));
+	}
+
+	function addRow(rowIndex) {
+		const newY = rowIndex ? ++dungeon.y.max : --dungeon.y.min;
+		const columnCount = dungeon.x.max - dungeon.x.min;
+		const newRow = dungeonElm.insertRow(rowIndex);
+
+		for (let i = 0; i <= columnCount; i++) {
+			const newCell = newRow.insertCell();
+
+			newCell.dataset.x = i + dungeon.x.min;
+			newCell.dataset.y = newY;
+
+			newCell.innerHTML = '<div></div>'.repeat(dungeon.floors.count);
+		}
+	}
+
+	function removeRow(rowIndex) {
+		dungeonElm.deleteRow(rowIndex);
+
+		!rowIndex ? dungeon.y.min++ : dungeon.y.max--;
+	}
+
+	function addColumn(colIndex) {
+		const newX = colIndex ? ++dungeon.x.max : --dungeon.x.min;
+		dungeonElm.querySelectorAll('tr').forEach((elm, index) => {
+			const newCell = elm.insertCell(colIndex);
+
+			newCell.dataset.x = newX;
+			newCell.dataset.y = index + dungeon.y.min;
+
+			newCell.innerHTML = '<div></div>'.repeat(dungeon.floors.count);
+		});
+	}
+
+	function removeColumn(colIndex) {
+		dungeonElm.querySelectorAll('tr').forEach(elm => {
+			elm.deleteCell(colIndex);
+		});
+
+		!colIndex ? dungeon.x.min++ : dungeon.x.max--;
+	}
+
+	const keyMap = {
+		ArrowUp: 'up',
+		KeyW: 'up',
+		Numpad8: 'up',
+		ArrowDown: 'down',
+		KeyS: 'down',
+		Numpad2: 'down',
+		ArrowRight: 'right',
+		KeyD: 'right',
+		Numpad6: 'right',
+		ArrowLeft: 'left',
+		KeyA: 'left',
+		Numpad4: 'left',
+		Space: 'use',
+		Numpad0: 'use',
+		KeyC: 'check',
+		Numpad5: 'check',
+		KeyX: 'clear',
+		Numpad1: 'clear',
+		ShiftLeft: 'shift',
+		ShiftRight: 'shift'
+	};
+
+	function refreshMovementInterval() {
+		if (keysPressed.up) {
+			clearInterval(keysPressed.up);
+
+			keysPressed.up = setInterval(() => {
+				handleMovement(true);
+			}, moveInterval);
+		}
+
+		if (keysPressed.down) {
+			clearInterval(keysPressed.down);
+
+			keysPressed.down = setInterval(() => {
+				handleMovement(false);
+			}, moveInterval);
+		}
+	}
+
+	document.addEventListener('keydown', e => {
+		if (e.code === 'Escape') {
+			errorDialog.close();
+			helpDialog.close();
+
+			if (cellSelectMode) {
+				toggleCellSelect(cellSelectMode);
+			}
+		}
+
+		if (document.activeElement.matches('input[type="number"]') && !e.ctrlKey) {
+			if (e.key === '-' && !e.target.value.includes('-')) {
+				e.target.value = `-${e.target.value}`;
+				e.preventDefault();
+			} else if (e.key === '+') {
+				e.target.value = e.target.value.replace('-', '');
+				e.preventDefault();
+			} else if (!/\d/.test(e.key) && e.key.length === 1) {
+				e.preventDefault();
+			}
+
+			return;
+		} else if (document.activeElement.matches('input, select, option, textarea')) {
+			return;
+		}
+
+		const pressedKey = keyMap[e.code];
+
+		if (!pressedKey) return;
+
+		switch (pressedKey) {
+			case 'shift':
+				if (!keysPressed.shift) {
+					moveInterval = 125;
+
+					refreshMovementInterval();
+				}
+
+				break;
+			case 'up':
+			case 'down':
+				e.preventDefault();
+
+				if (!keysPressed[pressedKey]) {
+					const forward = pressedKey === 'up';
+
+					handleMovement(forward);
+
+					keysPressed[pressedKey] = setInterval(() => {
+						handleMovement(forward);
+					}, moveInterval);
+				}
+				break;
+			case 'right':
+			case 'left':
+				e.preventDefault();
+
+				if (!keysPressed[pressedKey]) {
+					const clockwise = pressedKey === 'right';
+
+					updateDirection(clockwise);
+
+					keysPressed[pressedKey] = setInterval(() => {
+						updateDirection(clockwise);
+					}, 250);
+				}
+				break;
+			case 'use':
+				if (!keysPressed.use) {
+					keysPressed.use = true;
+
+					const connectionElm = playerCell.querySelector('.connection:not([data-type="pit-up"])');
+
+					if (connectionElm && connectionElm.dataset.target) {
+						const [targetFloor, targetX, targetY] = connectionElm.dataset.target.split(',');
+
+						updateFloor(Number(targetFloor));
+
+						movePlayer({x: Number(targetX), y: Number(targetY)}, playerFloor);
+					}
+				}
+				break;
+			case 'check':
+				if (!keysPressed.check) {
+					keysPressed.check = true;
+
+					toggleCheck();
+				}
+				break;
+			case 'clear':
+				if (!keysPressed.clear) {
+					keysPressed.clear = true;
+
+					toggleClear();
+				}
+				break;
+		}
+	});
+
+	document.addEventListener('focusout', e => {
+		if (e.target.matches('input[type="number"]')) {
+			const value = parseInt(e.target.value);
+
+			if (Number.isNaN(value)) {
+				e.target.value = e.target.min;
+			} else {
+				e.target.value = Math.max(e.target.min, Math.min(parseInt(e.target.value), e.target.max));
+			}
+		}
+	});
+
+	document.addEventListener('paste', e => {
+		if (e.target.matches('input[type="number"')) {
+			const data = parseInt(e.clipboardData.getData('text'));
+
+			if (Number.isNaN(data)) {
+				e.preventDefault();
+			}
+		}
+	});
+
+	function updateFloor(floorID, updatePlayer = true) {
+		floorListElm.querySelector('.active-floor')?.classList.remove('active-floor');
+		floorListElm.querySelector(`[data-id="${floorID}"]`).classList.add('active-floor');
+
+		activeFloor = {
+			id: floorID,
+			index: floorID - dungeon.floors.min
+		};
+
+		if (updatePlayer) {
+			floorListElm.querySelector('.player-floor')?.classList.remove('player-floor');
+			floorListElm.querySelector(`[data-id="${floorID}"]`).classList.add('player-floor');
+
+			playerFloor = {
+				id: floorID,
+				index: floorID - dungeon.floors.min
+			};
+
+			document.getElementById('removeFloor').toggleAttribute('disabled', floorID === dungeon.floors.max);
+			document.getElementById('removeBasement').toggleAttribute('disabled', floorID === dungeon.floors.min);
+
+			setDefaultTargetFloor();
+		}
+
+		playerCell.querySelectorAll('.connection').forEach(cell => {
+			const [connectionTargetFloorID, connectionTargetX, connectionTargetY] = cell.dataset.target.split(',');
+			const targetCell = dungeonElm.querySelector(`[data-x="${connectionTargetX}"][data-y="${connectionTargetY}"]`);
+
+			if (targetCell) {
+				targetCell.classList.remove('above', 'below');
+
+				if (parseInt(connectionTargetFloorID) !== activeFloor.id) {
+					targetCell.classList.add(connectionTargetFloorID > activeFloor.id ? 'above' : 'below');
+				}
+			}
+		});
+
+		calculateLayerStyle();
+	}
+
+	function calculateLayerStyle() {
+		layerStyleElm.textContent = `
+	td > div:nth-child(${playerFloor.index + 1}) {
+		opacity: .2;
+		z-index: 10;
+		pointer-events: none;
+	}
+
+	td > div:nth-child(${activeFloor.index + 1}) {
+		opacity: 1;
+		pointer-events: auto;
+	}`;
+	}
+
+	function setMode(mode) {
+		if (mode === 'edit' || mode === 'navigate') {
+			dungeon.mode = mode;
+			document.body.dataset.mode = dungeon.mode;
+			document.getElementById('mode').value = dungeon.mode;
+		}
+	}
+
+	document.getElementById('mode').addEventListener('change', e => {
+		setMode(e.target.value);
+	});
+
+	document.addEventListener('keyup', e => {
+		const pressedKey = keyMap[e.code];
+
+		if (pressedKey === 'shift') {
+			moveInterval = 250;
+			delete keysPressed.shift;
+
+			refreshMovementInterval();
+		} else if (pressedKey) {
+			clearInterval(keysPressed[pressedKey]);
+			delete keysPressed[pressedKey];
+		}
+	});
+
+	floorListElm.addEventListener('click', e => {
+		if (e.target.matches('li:not(.active-floor)')) {
+			updateFloor(Number(e.target.dataset.id), false);
+
+			if (Number(e.target.dataset.id) === playerFloor.id) {
+				setDefaultTargetFloor();
+			} else {
+				connectionTargetFloor.value = e.target.dataset.id;
+			}
+		}
+	});
+
+	function setStartPosition(targetElm) {
+		const targetCell = targetElm.parentElement;
+
+		dungeon.player.direction = playerDirection;
+		dungeon.player.floor = activeFloor.id;
+		dungeon.player.x = parseInt(targetCell.dataset.x);
+		dungeon.player.y = parseInt(targetCell.dataset.y);
+
+		const startPositionElm = document.querySelector('.start-position');
+
+		if (startPositionElm) {
+			startPositionElm.classList.remove('start-position');
+			startPositionElm.removeAttribute('data-direction');
+		}
+
+		targetElm.classList.add('start-position');
+		targetElm.dataset.direction = playerDirection;
+	}
+
+	dungeonElm.addEventListener('mousedown', e => {
+		if (e.buttons !== 1) return;
+
+		const targetCell = e.target.closest('td');
+
+		if (!targetCell) return;
+
+		const targetElm = targetCell.children[activeFloor.index];
+
+		if (cellSelectMode) {
+			if (cellSelectMode === 'connection') {
+				document.getElementById('connectionTargetX').value = targetCell.dataset.x;
+				document.getElementById('connectionTargetY').value = targetCell.dataset.y;
+
+				document.querySelector('.connection-target')?.classList.remove('connection-target');
+				targetElm.classList.add('connection-target');
+			} else if (cellSelectMode === 'start-position') {
+				setStartPosition(targetElm);
+			}
+
+			toggleCellSelect(cellSelectMode);
+		} else if (dungeon.mode === 'edit' && !targetElm.classList.contains('active')) {
+			dragging = true;
+			dragMode = !targetElm.dataset?.tile;
+
+			if (dragMode) {
+				targetElm.setAttribute('data-tile', tileType);
+			} else {
+				targetElm.removeAttribute('data-tile');
+			}
+
+			targetElm.querySelectorAll('.connection').forEach(connection => {
+				removeConnection(connection);
+			});
+
+			targetElm.querySelectorAll('.door[data-direction]:not([data-direction="4"])').forEach(door => {
+				removeDoor(door, activeFloor.index);
+			});
+
+			targetElm.innerHTML = '';
+		}
+	});
+
+	document.addEventListener('mouseup', e => {
+		if (dragging) {
+			dragging = false;
+			calculateGridSize();
+		}
+	});
+
+	document.addEventListener('dragstart', e => {
+		e.preventDefault();
+	});
+
+	document.addEventListener('drop', e => {
+		e.preventDefault();
+	});
+
+	dungeonElm.addEventListener('mouseover', e => {
+		e.preventDefault();
+
+		const targetCell = e.target.closest('td')?.children[activeFloor.index];
+
+		if (targetCell && !targetCell.matches('.active')) {
+			if (dragging && dragMode == !targetCell.dataset?.tile) {
+				if (dragMode) {
+					targetCell.setAttribute('data-tile', tileType);
+				} else {
+					targetCell.removeAttribute('data-tile');
+				}
+			} else {
+				targetCell.querySelectorAll('.connection').forEach(connection => {
+					highlightConnection(connection, true);
+				});
+			}
+		}
+	});
+
+	dungeonElm.addEventListener('mouseout', e => {
+		if (e.target.closest('td')) {
+			clearHighlights(true);
+		}
+	});
+
+	function highlightConnection(connectionElm, hover = false) {
+		const [connectionTargetFloorID, connectionTargetX, connectionTargetY] = connectionElm.dataset.target.split(',');
+		const connectionTargetElm = dungeonElm.querySelector(`[data-x="${connectionTargetX}"][data-y="${connectionTargetY}"]`);
+
+		if (connectionTargetElm) {
+			connectionTargetElm.classList.add('connection-highlight');
+			connectionTargetElm.classList.add(hover ? 'hover' : 'visit');
+
+			if (parseInt(connectionTargetFloorID) !== activeFloor.id) {
+				connectionTargetElm.classList.add(connectionTargetFloorID > activeFloor.id ? 'above' : 'below');
+			}
+		}
+	}
+
+	function clearHighlights(hover = false) {
+		dungeonElm.querySelectorAll(`td.connection-highlight${ hover ? '.hover' : '.visit' }`).forEach(connection => {
+			if (hover && !connection.classList.contains('visit') || !hover && !connection.classList.contains('hover')) {
+				connection.classList.remove('connection-highlight');
+			}
+
+			connection.classList.remove((hover ? 'hover' : 'visit'), 'above', 'below');
+		});
+	}
+
+	dungeonElm.addEventListener('contextmenu', e => {
+		e.preventDefault();
+
+		const targetCell = e.target.closest('td');
+
+		if (targetCell && (dungeon.mode === 'edit' || e.target.dataset?.tile)) {
+			if (activeFloor.id !== playerFloor.id) {
+				updateFloor(activeFloor.id);
+			}
+
+			clearHighlights(true);
+
+			movePlayer({x: Number(targetCell.dataset.x), y: Number(targetCell.dataset.y)}, activeFloor);
+		}
+	});
+
+	function addTooltip(cell, category, type, content) {
+		let tooltipElm = cell.querySelector('.tooltip');
+
+		if (!tooltipElm) {
+			tooltipElm = document.createElement('div');
+			tooltipElm.classList.add('tooltip');
+			cell.append(tooltipElm);
+		}
+
+		let categoryElm = tooltipElm.querySelector(`[data-category="${ category }"]`);
+
+		if (!categoryElm) {
+			categoryElm = document.createElement('fieldset');
+			categoryElm.dataset.category = category;
+
+			const categoryLegend = document.createElement('legend');
+			categoryLegend.textContent = category.replaceAll('-', ' ');
+			categoryElm.append(categoryLegend);
+
+			tooltipElm.append(categoryElm);
+		}
+
+		let typeElm = categoryElm.querySelector(`[data-type="${ type }"]`);
+
+		if (!typeElm) {
+			typeElm = document.createElement('div');
+			typeElm.dataset.type = type;
+			categoryElm.append(typeElm);
+		}
+
+		switch (type) {
+			case 0:
+				type = 'North';
+				break;
+			case 1:
+				type = 'East';
+				break;
+			case 2:
+				type = 'South';
+				break;
+			case 3:
+				type = 'West';
+				break;
+			case 4:
+				type = 'Center';
+				break;
+		}
+
+		typeElm.innerHTML = `<span class="header">${ escapeHTML(type).replaceAll('-', ' ') }:</span> <span class="content">${ escapeHTML(content) }</span>`;
+	}
+
+	function removeTooltip(cell, category, type) {
+		const tooltipElm = cell.querySelector('.tooltip');
+
+		if (tooltipElm) {
+			const categoryElm = tooltipElm.querySelector(`[data-category="${ category }"]`);
+
+			if (categoryElm) {
+				const typeElm = categoryElm.querySelector(`[data-type="${ type }"]`)?.remove();
+
+				if (categoryElm.children.length <= 1) {
+					categoryElm.remove();
+
+					if (!tooltipElm.children.length) {
+						tooltipElm.remove();
+					}
+				}
+			}
+		}
+	}
+
+	function togglePointOfInterest() {
+		const tooltip = document.getElementById('pointOfInterestTooltip').value;
+		const type = document.getElementById('pointOfInterestType').value;
+
+		const pointOfInterest = playerCell.querySelector(`.point-of-interest[data-type="${ type }"]`);
+
+		if (pointOfInterest) {
+			pointOfInterest.remove();
+
+			removeTooltip(playerCell, 'points-of-interest', type);
+		} else if (tooltip) {
+			const pointOfInterestElm = document.createElement('div');
+			pointOfInterestElm.classList.add('point-of-interest');
+			pointOfInterestElm.dataset.type = type;
+
+			addTooltip(playerCell, 'points-of-interest', type, tooltip);
+
+			playerCell.append(pointOfInterestElm);
+
+			document.getElementById('pointOfInterestTooltip').value = '';
+		}
+
+		document.activeElement.blur();
+	}
+
+	function ucFirst(string) {
+		return string[0].toUpperCase() + string.slice(1);
+	}
+
+	function findNeighborCell(x, y, floorIndex, direction) {
+		switch (direction) {
+			case 0:
+				y--;
+				break;
+			case 1:
+				x++;
+				break;
+			case 2:
+				y++;
+				break;
+			case 3:
+				x--;
+				break;
+		}
+
+		return dungeonElm.querySelector(`[data-x="${ x }"][data-y="${ y }"]`)?.children[floorIndex];
+	}
+
+	function removeDoor(doorElm, floorIndex) {
+		const doorCell = doorElm.closest('td');
+		const doorDirection = parseInt(doorElm.dataset.direction);
+
+		removeTooltip(doorElm.parentElement, 'doors', doorDirection);
+		doorElm.remove();
+
+		if (doorDirection < 4) {
+			const neighborCell = findNeighborCell(parseInt(doorCell.dataset.x), parseInt(doorCell.dataset.y), floorIndex, doorDirection);
+			const reverseDirection = doorDirection ^ 2;
+
+			if (neighborCell) {
+				const neighborDoor = neighborCell.querySelector(`.door[data-direction="${ reverseDirection }"]`);
+
+				if (neighborDoor) {
+					removeTooltip(neighborCell, 'doors', reverseDirection);
+					neighborDoor.remove();
+				}
+			}
+		}
+	}
+
+	function toggleDoor() {
+		const doorDirection = parseInt(document.getElementById('doorDirection').value);
+		const doorType = document.getElementById('doorType').value;
+
+		let door = playerCell.querySelector(`.door[data-direction="${ doorDirection }"]`);
+
+		if (door && door.dataset.type === doorType) {
+			removeDoor(door, playerFloor.index);
+		} else {
+			let tooltip = document.getElementById('doorTooltip').value;
+
+			if (!door) {
+				door = document.createElement('div');
+				door.classList.add('door');
+				door.dataset.direction = doorDirection;
+
+				playerCell.append(door);
+			} else {
+				removeTooltip(playerCell, 'doors', doorDirection);
+			}
+
+			door.dataset.type = doorType;
+
+			if (doorType !== 'normal') {
+				if (tooltip) {
+					tooltip = `[${ucFirst(doorType)}] ${tooltip}`;
+				} else {
+					tooltip = `[${ucFirst(doorType)}]`;
+				}
+			}
+
+			if (tooltip) {
+				addTooltip(playerCell, 'doors', doorDirection, tooltip);
+			}
+
+			document.getElementById('doorTooltip').value = '';
+
+			if (doorDirection < 4) {
+				const neighborCell = findNeighborCell(playerCoords.x, playerCoords.y, playerFloor.index, doorDirection);
+				const reverseDirection = doorDirection ^ 2;
+
+				let neighborDoor = neighborCell.querySelector(`.door[data-direction="${ reverseDirection }"]`);
+
+				if (neighborDoor) {
+					removeTooltip(neighborCell, 'doors', reverseDirection);
+					neighborDoor.remove();
+				}
+
+				neighborDoor = door.cloneNode(true);
+				neighborDoor.dataset.direction = reverseDirection;
+
+				neighborCell.append(neighborDoor);
+
+				if (tooltip) {
+					addTooltip(neighborCell, 'doors', reverseDirection, tooltip);
+				}
+			}
+		}
+
+		document.activeElement.blur();
+	}
+
+	function removeConnection(connectionElm) {
+		if (!connectionElm.dataset.unlinked) {
+			const [connectionType, connectionDirection] = connectionElm.dataset.type.split('-');
+			const [connectionTargetFloorID, connectionTargetX, connectionTargetY] = connectionElm.dataset.target.split(',');
+
+			const reverseDirection = {
+				up: 'down',
+				down: 'up'
+			};
+
+			const connectionTargetType = typeof connectionDirection === 'undefined' ? connectionType : `${connectionType}-${reverseDirection[connectionDirection]}`;
+			const connectionTargetElm = dungeonElm.querySelector(`[data-x="${connectionTargetX}"][data-y="${connectionTargetY}"]`).children[connectionTargetFloorID - dungeon.floors.min]?.querySelector(`.connection[data-type="${ connectionTargetType }"]`);
+
+			if (connectionTargetElm) {
+				if (connectionTargetElm.parentElement.closest('.active')) {
+					clearHighlights();
+				}
+
+				removeTooltip(connectionTargetElm.parentElement, 'connections', connectionTargetType);
+				connectionTargetElm.remove();
+			}
+		}
+
+		removeTooltip(connectionElm.parentElement, 'connections', connectionElm.dataset.type);
+		connectionElm.remove();
+	}
+
+	function createConnection(connectionCell, type, targetFloorID, targetX, targetY, unlinked = false, highlight = false) {
+		connectionElm = document.createElement('div');
+		connectionElm.classList.add('connection');
+		connectionElm.dataset.type = type;
+		connectionElm.dataset.target = `${targetFloorID},${targetX},${targetY}`;
+
+		if (unlinked) {
+			connectionElm.dataset.unlinked = 'true';
+		}
+
+		const tooltipContent = `${targetFloorID < 0 ? `B${Math.abs(targetFloorID)}` : `F${targetFloorID + 1}`} (${targetX},${targetY})`;
+		addTooltip(connectionCell, 'connections', type, tooltipContent);
+
+		connectionCell.append(connectionElm);
+
+		if (highlight) {
+			highlightConnection(connectionElm);
+		}
+	}
+
+	function toggleConnection() {
+		let targetFloorID = parseInt(document.getElementById('connectionTargetFloor').value);
+		
+		const type = document.getElementById('connectionType').value;
+		const removePitUp = type === 'pit' && (targetFloorID > playerFloor.id);
+
+		let connectionElm = playerCell.querySelector(`.connection${ removePitUp ? '[data-type="pit-up"]' : ':not([data-type="pit-up"])'}`);
+
+		if (connectionElm) {
+			removeConnection(connectionElm);
+			clearHighlights();
+		} else {
+			const targetX = parseInt(document.getElementById('connectionTargetX').value);
+			const targetY = parseInt(document.getElementById('connectionTargetY').value);
+
+			if (Number.isNaN(targetX) || Number.isNaN(targetY)) {
+				return;
+			}
+
+			const unlinked = document.getElementById('connectionUnlink').checked;
+
+			if (type !== 'teleport') {
+				if (targetFloorID === playerFloor.id) {
+					if (type === 'stairway') {
+						targetFloorID++;
+					} else if (type === 'pit') {
+						targetFloorID--;
+					}
+				}
+			}
+
+			if (!connectionTargetFloor.querySelector(`[value="${targetFloorID}"]`) || !dungeonElm.querySelector(`[data-x="${targetX}"][data-y="${targetY}"]`)) {
+				return;
+			}
+
+			if (!dungeonElm.querySelector('td').children[targetFloorID - dungeon.floors.min]) {
+				addFloor(playerFloor.id > targetFloorID);
+			}
+
+			const targetFloorIndex = targetFloorID - dungeon.floors.min;
+			const targetCell = dungeonElm.querySelector(`[data-x="${targetX}"][data-y="${targetY}"]`)?.children[targetFloorIndex];
+
+			if (!targetCell || targetCell === playerCell) {
+				return;
+			}
+
+			const directions = type === 'teleport' ? ['', ''] : (targetFloorID > playerFloor.id) ? ['-up', '-down'] : ['-down', '-up'];
+
+			if (!unlinked) {
+				const connectionTargetElm = targetCell.querySelector(`.connection${ type === 'pit' && directions[1] === '-up' ? '[data-type="pit-up"]' : ':not([data-type="pit-up"])'}`);
+
+				if (connectionTargetElm) {
+					removeConnection(connectionTargetElm);
+					clearHighlights();
+				}
+
+				createConnection(targetCell, `${ type }${ directions[1] }`, playerFloor.id, playerCoords.x, playerCoords.y);
+			}
+
+			createConnection(playerCell, `${ type }${ directions[0] }`, targetFloorID, targetX, targetY, true);
+		}
+
+		document.activeElement.blur();
+	}
+
+	function setDefaultTargetFloor() {
+		const defaultValues = {
+			stairway: 1,
+			pit: -1,
+			teleport: 0
+		};
+
+		const defaultFloor = playerFloor.id + defaultValues[document.getElementById('connectionType').value];
+
+		document.getElementById('connectionTargetFloor').value = defaultFloor;
+	}
+
+	function getfloorLabel(floorID) {
+		if (floorID >= 0) {
+			return `F${floorID + 1}`;
+		} else {
+			return `B${Math.abs(floorID)}`
+		}
+	}
+
+	function addFloor(below = false) {
+		const li = document.createElement('li');
+		const option = document.createElement('option');
+
+		dungeon.floors.count++;
+
+		const cells = dungeonElm.querySelectorAll('td');
+
+		if (below) {
+			playerFloor.index++;
+			activeFloor.index++;
+			dungeon.floors.min--;
+
+			cells.forEach(cell => {
+				const div = document.createElement('div');
+				cell.insertAdjacentElement('afterbegin', div);
+			});
+
+			const floorID = floorListElm.lastElementChild.dataset.id - 1;
+
+			li.dataset.id = floorID;
+			li.textContent = getfloorLabel(floorID);
+			floorListElm.append(li);
+
+			option.value = floorID - 1;
+			option.text = getfloorLabel(floorID - 1);
+			connectionTargetFloor.add(option);
+
+			calculateLayerStyle();
+
+			document.getElementById('removeBasement').removeAttribute('disabled');
+		} else {
+			dungeon.floors.max++;
+
+			cells.forEach(cell => {
+				const div = document.createElement('div');
+				cell.appendChild(div);
+			});
+
+			const floorID = parseInt(floorListElm.firstElementChild.dataset.id) + 1;
+
+			li.dataset.id = floorID;
+			li.textContent = getfloorLabel(floorID);
+			floorListElm.prepend(li);
+
+			option.value = floorID + 1;
+			option.text = getfloorLabel(floorID + 1);
+			connectionTargetFloor.add(option, 0);
+
+			document.getElementById('removeFloor').removeAttribute('disabled');
+		}
+	}
+
+	function removeFloor(below = false) {
+		dungeon.floors.count--;
+
+		const cells = dungeonElm.querySelectorAll('td');
+		const floorID = (below ? floorListElm.lastElementChild : floorListElm.firstElementChild).dataset.id;
+
+		if (below) {
+			playerFloor.index--;
+			activeFloor.index--;
+			dungeon.floors.min++;
+
+			floorListElm.lastElementChild.remove();
+
+			cells.forEach(cell => {
+				cell.firstElementChild.remove();
+			});
+
+			if (floorListElm.children.length === 1) {
+				document.getElementById('removeBasement').setAttribute('disabled', '');
+			}
+
+			if (floorID === activeFloor.id) {
+				updateFloor(floorID + 1, false);
+			} else {
+				calculateLayerStyle();
+			}
+		} else {
+			dungeon.floors.max--;
+
+			floorListElm.firstElementChild.remove();
+
+			cells.forEach(cell => {
+				cell.lastElementChild.remove();
+			});
+
+			if (floorListElm.children.length === 1) {
+				document.getElementById('removeFloor').setAttribute('disabled', '');
+			}
+
+			if (floorID === activeFloor.id) {
+				updateFloor(floorID - 1, false);
+			} else {
+				calculateLayerStyle();
+			}
+		}
+
+		const connections = dungeonElm.querySelectorAll(`.connection[data-target^="${ floorID }"]`);
+
+		connections.forEach(connection => {
+			removeConnection(connection);
+		});
+
+		calculateGridSize();
+	}
+
+	document.getElementById('tileType').addEventListener('change', e => {
+		tileType = e.target.value;
+	});
+
+	document.getElementById('setStartPosition').addEventListener('click', () => {
+		setStartPosition(playerCell);
+	});
+
+	document.getElementById('selectStartPosition').addEventListener('click', () => {
+		toggleCellSelect('start-position');
+	});
+
+	document.getElementById('connectionType').addEventListener('change', setDefaultTargetFloor);
+
+	document.getElementById('addFloor').addEventListener('click', () => {
+		addFloor();
+	});
+
+	document.getElementById('addBasement').addEventListener('click', () => {
+		addFloor(true);
+	});
+
+	document.getElementById('removeFloor').addEventListener('click', () => {
+		removeFloor();
+	});
+
+	document.getElementById('removeBasement').addEventListener('click', () => {
+		removeFloor(true);
+	});
+
+	document.getElementById('pointOfInterestButton').addEventListener('click', () => {
+		togglePointOfInterest();
+	});
+
+	document.getElementById('pointOfInterestType').addEventListener('change', e => {
+		document.getElementById('pointOfInterestTooltip').placeholder = `e.g. ${ e.target.options[e.target.selectedIndex].dataset.example }`;
+	});
+
+	document.getElementById('doorType').addEventListener('change', e => {
+		document.getElementById('doorTooltip').placeholder = `e.g. ${ e.target.options[e.target.selectedIndex].dataset.example }`;
+	});
+
+	document.getElementById('doorButton').addEventListener('click', () => {
+		toggleDoor();
+	});
+
+	document.getElementById('connectionButton').addEventListener('click', () => {
+		toggleConnection();
+	});
+
+	window.addEventListener('load', () => {
+		document.getElementById('dungeon-form').reset();
+	}, {
+		once: true
+	});
+
+	document.getElementById('dungeon-form').addEventListener('click', e => {
+		if (cellSelectMode && !e.target.closest('button')?.querySelector('.select-icon')) {
+			toggleCellSelect(cellSelectMode);
+		}
+	});
+
+	function toggleCellSelect(mode) {
+		cellSelectMode = (mode === cellSelectMode) ? null : mode;
+
+		document.getElementById('selectStartPosition').classList.toggle('active', cellSelectMode === 'start-position');
+		document.getElementById('selectConnectionTarget').classList.toggle('active', cellSelectMode === 'connection');
+		dungeonElm.classList.toggle('target', cellSelectMode !== null);
+	}
+
+	document.getElementById('selectConnectionTarget').addEventListener('click', () => {
+		toggleCellSelect('connection');
+	});
+
+	function convertDataset(dataset) {
+		const converted = {};
+
+		for (const key in dataset) {
+			const value = dataset[key];
+			converted[key] = !isNaN(value) && value.trim() !== "" ? Number(value) : value;
+		}
+
+		return converted;
+	};
+
+	function convertTooltip(tooltip) {
+		const data = {};
+
+		tooltip.querySelectorAll('[data-category]').forEach(category => {
+			data[category.dataset.category] = {};
+
+			category.querySelectorAll('[data-type]').forEach(type => {
+				data[category.dataset.category][type.dataset.type] = type.querySelector('.content')?.textContent || '';
+			});
+		});
+
+		return data;
+	}
+
+	function isEmpty(obj) {
+		for (const prop in obj) {
+			if (Object.hasOwn(obj, prop)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	document.getElementById('save').addEventListener('click', () => {
+		if(!dungeonElm.querySelector(`[data-x="${ dungeon.player.x }"][data-y="${ dungeon.player.y }"]`)) {
+			dungeon.player.x = playerCoords.x;
+			dungeon.player.y = playerCoords.y;
+			dungeon.player.floor = playerFloor.id;
+			dungeon.player.direction = playerDirection;
+		}
+
+		const data = {
+			dungeon: dungeon,
+			tiles: []
+		};
+
+		data.tiles = Array.from(dungeonElm.querySelectorAll('tr')).map(row => [
+			parseInt(row.children[0].dataset.y),
+			Array.from(row.children).map(cell => [
+				parseInt(cell.dataset.x),
+				Array.from(cell.children).map((layer, index) => {
+					const layerArr = [
+						index,
+						layer.dataset.tile ? parseInt(layer.dataset.tile) : null,
+						Array.from(layer.children).map(entity => {
+							const entityArr = [
+								entity.className,
+								entity.classList.contains('tooltip') ? convertTooltip(entity) : convertDataset(entity.dataset)
+							]
+
+							return isEmpty(entityArr[1]) ? entityArr.slice(0, 1) : entityArr;
+						}).filter(entity => !entity[0].includes('player'))
+					];
+
+					return layerArr[2].length > 0 ? layerArr : layerArr.slice(0, 2);
+				}).filter(layer => layer[1] !== null || layer[2])
+			]).filter(cell => cell[1].length > 0)
+		]).filter(row => row[1].length > 0);
+
+		const url = URL.createObjectURL(new Blob([JSON.stringify(data, null)], { type: 'application/json' }));
+		const a = document.createElement('a');
+
+		a.href = url;
+
+		const name = document.getElementById('dungeonName').value;
+
+		a.download = `${ (name.length ? name : (new Date).toISOString().split('T')[0]) }.dungeon`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	});
+
+	const errorDialog = document.getElementById('errorDialog');
+	const helpDialog = document.getElementById('helpDialog');
+
+	function error(message) {
+		errorDialog.querySelector('p').textContent = message;
+		errorDialog.showModal();
+	}
+
+	document.getElementById('help-controls').addEventListener('click', () => {
+		helpDialog.showModal();
+	});
+
+	document.getElementById('closeError').addEventListener('click', () => {
+		errorDialog.close();
+	});
+
+	document.getElementById('closeHelp').addEventListener('click', () => {
+		helpDialog.close();
+	});
+
+	function initializeDungeon(data) {
+		dungeon = Object.assign(dungeon, data.dungeon);
+
+		dungeonElm.innerHTML = '';
+
+		const minX = dungeon.x.min;
+		const maxX = dungeon.x.max;
+		const minY = dungeon.y.min;
+		const maxY = dungeon.y.max;
+		const floorCount = dungeon.floors.count;
+
+		const table = document.createDocumentFragment();
+
+		for (let y = minY; y <= maxY; y++) {
+			const row = document.createElement('tr');
+
+			for (let x = minX; x <= maxX; x++) {
+				const cell = document.createElement('td');
+
+				cell.dataset.x = x;
+				cell.dataset.y = y;
+				cell.innerHTML = '<div></div>'.repeat(floorCount);
+
+				row.append(cell);
+			}
+
+			table.append(row);
+		}
+
+		dungeonElm.append(table);
+
+		data.tiles.forEach(tile => {
+			tile[1].forEach(cell => {
+				const cellLayers = dungeonElm.querySelector(`[data-y="${ tile[0] }"][data-x="${ cell[0] }"]`).children;
+
+				cell[1].forEach(layer => {
+					const layerElm = cellLayers[layer[0]];
+
+					if (layer[1] !== null) {
+						layerElm.dataset.tile = layer[1];
+					}
+
+					if (layer[2]) {
+						layer[2].forEach(entity => {
+							if (entity[0] === 'tooltip') {
+								for (const [category, value] of Object.entries(entity[1])) {
+									for (const [type, content] of Object.entries(value)) {
+										addTooltip(layerElm, category, type, content);
+									}
+								}
+							} else {
+								const entityElm = document.createElement('div');
+
+								entityElm.className = entity[0];
+
+								if (entity[1]) {
+									for (const [key, value] of Object.entries(entity[1])) {
+										entityElm.dataset[key] = value;
+									}
+								}
+
+								layerElm.append(entityElm);
+							}
+						});
+					}
+				})
+			});
+		});
+
+		floorListElm.innerHTML = '';
+		connectionTargetFloor.innerHTML = '';
+
+		for (let i = dungeon.floors.min; i <= dungeon.floors.max; i++) {
+			const li = document.createElement('li');
+			const option = document.createElement('option');
+
+			li.dataset.id = i;
+			option.value = i;
+
+			const label = getfloorLabel(i);
+
+			li.textContent = label;
+			option.text = label;
+
+			floorListElm.prepend(li);
+			connectionTargetFloor.add(option, 0);
+		}
+
+		const addBasementOption = document.createElement('option');
+		addBasementOption.value = dungeon.floors.min - 1;
+		addBasementOption.text = getfloorLabel(dungeon.floors.min - 1);
+		connectionTargetFloor.add(addBasementOption);
+
+		const addFloorOption = document.createElement('option');
+		addFloorOption.value = dungeon.floors.max + 1;
+		addFloorOption.text = getfloorLabel(dungeon.floors.max + 1);
+		connectionTargetFloor.add(addFloorOption, 0);
+
+		playerDirection = dungeon.player.direction;
+
+		playerElm = document.createElement('div');
+		playerElm.className = 'player';
+		playerElm.dataset.direction = playerDirection;
+
+		updateFloor(dungeon.player.floor, true);
+		movePlayer({x: dungeon.player.x, y: dungeon.player.y}, playerFloor);
+
+		setStartPosition(playerCell);
+
+		setMode(dungeon.mode);
+		calculateGridSize();
+	}
+
+	function resetDungeon() {
+		const data = {
+			dungeon: {
+				x: {
+					min: -1,
+					max: 1
+				},
+				y: {
+					min: -1,
+					max: 1
+				},
+				floors: {
+					count: 1,
+					min: 0,
+					max: 0
+				},
+				player: {
+					x: 0,
+					y: 0,
+					floor: 0,
+					direction: 0,
+				},
+				mode: 'edit'
+			},
+			tiles: []
+		};
+
+		initializeDungeon(data);
+	}
+
+	function validateFormat(data) {
+		if (!data.dungeon || !['x', 'y', 'floors', 'player'].every(prop => data.dungeon.hasOwnProperty(prop))) return {success: false, message: 'Basic dungeon data missing'};
+		if (!data.tiles || !Array.isArray(data.tiles)) return {success: false, message: 'No tiles defined'};
+		if (!['x', 'y', 'floors'].every(prop => {
+			const range = data.dungeon[prop];
+
+			return range !== 'undefined' && range !== null && !Number.isNaN(range.min) && !Number.isNaN(range.max) && range.min <= range.max
+		}) || !data.dungeon.floors.count || Number.isNaN(data.dungeon.floors.count)) return {success: false, message: 'Invalid dungeon dimensions'};
+
+		return {success: true};
+	}
+
+	document.getElementById('loadFile').addEventListener('change', async e => {
+		const file = e.target.files[0];
+		const text = await file.text();
+
+		try {
+			const data = JSON.parse(text);
+
+			validatedData = validateFormat(data);
+
+			if (validatedData.success) {
+				initializeDungeon(data);
+				document.getElementById('dungeonName').value = file.name.substring(0, file.name.lastIndexOf('.'));
+			} else {
+				error(`Sorry, "${ file.name }" is not a valid dungeon map:\n${ validatedData.message }`);
+			}
+		} catch (e) {
+			error(`Loading failed, "${ file.name }" contains corrupt data!`);
+			console.error(e);
+			resetDungeon();
+		}
+	});
+
+	document.getElementById('load').addEventListener('click', () => {
+		document.getElementById('loadFile').click();
+	});
+</script>
+</body>
+</html>
