@@ -1697,7 +1697,7 @@
 			categoryElm.append(typeElm);
 		}
 
-		switch (type) {
+		switch (parseInt(type)) {
 			case 0:
 				type = 'North';
 				break;
@@ -2202,7 +2202,7 @@
 			data[category.dataset.category] = {};
 
 			category.querySelectorAll('[data-type]').forEach(type => {
-				data[category.dataset.category][type.dataset.type] = type.querySelector('.content')?.textContent || '';
+				data[category.dataset.category][type.dataset.type] = type.querySelector('.content')?.innerText || '';
 			});
 		});
 
