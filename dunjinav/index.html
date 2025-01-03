@@ -389,8 +389,8 @@
 	}
 
 	[data-tile="2"] {
-		background-color: #0bda51;
-		--alt-color: #0dba51;
+		background-color: #0dba51;
+		--alt-color: #0bda51;
 	}
 
 	[data-tile="3"] {
@@ -966,16 +966,6 @@
 				<button id="setStartPosition" type="button">Set current</button>
 				<button id="selectStartPosition" type="button"><span class="icon select-icon"></span></button>
 			</div>
-		</div>
-
-		<div class="input-container">
-			<label for="startDirection">Starting direction</label>			
-			<select id="startDirection">
-				<option value="0" selected>North</option>
-				<option value="1">East</option>
-				<option value="2">South</option>
-				<option value="3">West</option>
-			</select>
 		</div>
 	</fieldset>
 </form>
@@ -1976,7 +1966,7 @@
 				createConnection(targetCell, `${ type }${ directions[1] }`, playerFloor.id, playerCoords.x, playerCoords.y);
 			}
 
-			createConnection(playerCell, `${ type }${ directions[0] }`, targetFloorID, targetX, targetY, true);
+			createConnection(playerCell, `${ type }${ directions[0] }`, targetFloorID, targetX, targetY, unlinked, true);
 		}
 
 		document.activeElement.blur();
@@ -2185,11 +2175,18 @@
 	});
 
 	function convertDataset(dataset) {
-		const converted = {};
+		const converted = [dataset.type];
 
 		for (const key in dataset) {
 			const value = dataset[key];
-			converted[key] = !isNaN(value) && value.trim() !== "" ? Number(value) : value;
+
+			if (key !== 'type') {
+				if (!converted[1]) {
+					converted[1] = {};
+				}
+
+				converted[1][key] = !isNaN(value) && value.trim() !== "" ? Number(value) : value;
+			}
 		}
 
 		return converted;
@@ -2209,14 +2206,17 @@
 		return data;
 	}
 
-	function isEmpty(obj) {
-		for (const prop in obj) {
-			if (Object.hasOwn(obj, prop)) {
-				return false;
-			}
+	function findOrInsertEntity(array, newEntity) {
+		const entityString = JSON.stringify(newEntity);
+		const entityIndex = array.findIndex(entity => JSON.stringify(entity) === entityString);
+
+		if (entityIndex !== -1) {
+			return entityIndex;
 		}
 
-		return true;
+		array.push(newEntity);
+
+		return array.length - 1;
 	}
 
 	document.getElementById('save').addEventListener('click', () => {
@@ -2227,33 +2227,69 @@
 			dungeon.player.direction = playerDirection;
 		}
 
-		const data = {
-			dungeon: dungeon,
-			tiles: []
-		};
+		const data = [
+			`${dungeon.x.min},${dungeon.x.max},${dungeon.y.min},${dungeon.y.max},${dungeon.floors.min},${dungeon.floors.max},${dungeon.player.x},${dungeon.player.y},${dungeon.player.floor},${dungeon.player.direction},${dungeon.mode === 'navigate' ? 1 : 0}`
+		];
 
-		data.tiles = Array.from(dungeonElm.querySelectorAll('tr')).map(row => [
-			parseInt(row.children[0].dataset.y),
-			Array.from(row.children).map(cell => [
-				parseInt(cell.dataset.x),
-				Array.from(cell.children).map((layer, index) => {
-					const layerArr = [
-						index,
-						layer.dataset.tile ? parseInt(layer.dataset.tile) : null,
-						Array.from(layer.children).map(entity => {
-							const entityArr = [
-								entity.className,
-								entity.classList.contains('tooltip') ? convertTooltip(entity) : convertDataset(entity.dataset)
-							]
+		const entityData = {};
+		const rowEntries = [];
 
-							return isEmpty(entityArr[1]) ? entityArr.slice(0, 1) : entityArr;
-						}).filter(entity => !entity[0].includes('player'))
-					];
+		dungeonElm.querySelectorAll('tr').forEach(row => {
+			const colEntries = [];
+			const cellY = row.children[0].dataset.y;
 
-					return layerArr[2].length > 0 ? layerArr : layerArr.slice(0, 2);
-				}).filter(layer => layer[1] !== null || layer[2])
-			]).filter(cell => cell[1].length > 0)
-		]).filter(row => row[1].length > 0);
+			Array.from(row.children).forEach(col => {
+				const layerEntries = [];
+				const cellX = col.dataset.x;
+
+				Array.from(col.children).forEach((layer, index) => {
+					const layerTile = layer.dataset.tile;
+					const entityArray = [];
+
+					Array.from(layer.children).forEach(entity => {
+						if (entity.className !== 'player') {
+							const entityDataLabel = entity.className[0];
+
+							if (!entityData[entityDataLabel]) {
+								entityData[entityDataLabel] = [];
+							}
+
+							const entityElm = entity.classList.contains('tooltip') ? convertTooltip(entity) : convertDataset(entity.dataset)
+
+							entityArray.push(`${entityDataLabel}${findOrInsertEntity(entityData[entityDataLabel], entityElm)}`);
+						}
+					});
+
+					let layerEntry = '';
+
+					if (layerTile) {
+						layerEntry = `.${layerTile}`;
+					}
+
+					if (entityArray.length) {
+						layerEntry += `,${entityArray.join(',')}`;
+					}
+
+					if (layerEntry.length) {
+						layerEntries.push(`${index}${layerEntry}`);
+					}
+				});
+
+				if (layerEntries.length) {
+					colEntries.push(`${cellX}:${layerEntries.join(':')}`);
+				}
+			});
+
+			if (colEntries.length) {
+				rowEntries.push(`${cellY}|${colEntries.join('|')}`);
+			}
+		});
+
+		data[1] = rowEntries.join('/');
+
+		if (Object.keys(entityData).length) {
+			data[2] = entityData;
+		}
 
 		const url = URL.createObjectURL(new Blob([JSON.stringify(data, null)], { type: 'application/json' }));
 		const a = document.createElement('a');
@@ -2290,7 +2326,36 @@
 	});
 
 	function initializeDungeon(data) {
-		dungeon = Object.assign(dungeon, data.dungeon);
+		const entityClassMap = {
+			c: 'connection',
+			d: 'door',
+			p: 'point-of-interest'
+		};
+
+		dungeonData = data[0].split(',');
+
+		dungeon = {
+			x: {
+				min: parseInt(dungeonData[0]),
+				max: parseInt(dungeonData[1])
+			},
+			y: {
+				min: parseInt(dungeonData[2]),
+				max: parseInt(dungeonData[3])
+			},
+			floors: {
+				min: parseInt(dungeonData[4]),
+				max: parseInt(dungeonData[5]),
+				count: parseInt(dungeonData[5]) - parseInt(dungeonData[4]) + 1
+			},
+			player: {
+				x: parseInt(dungeonData[6]),
+				y: parseInt(dungeonData[7]),
+				floor: parseInt(dungeonData[8]),
+				direction: parseInt(dungeonData[9])
+			},
+			mode: parseInt(dungeonData[10]) === 1 ? 'navigate' : 'edit'
+		};
 
 		dungeonElm.innerHTML = '';
 
@@ -2320,40 +2385,49 @@
 
 		dungeonElm.append(table);
 
-		data.tiles.forEach(tile => {
-			tile[1].forEach(cell => {
-				const cellLayers = dungeonElm.querySelector(`[data-y="${ tile[0] }"][data-x="${ cell[0] }"]`).children;
+		data[1].split('/').forEach(row => {
+			const cols = row.split('|');
+			const cellY = cols.shift();
 
-				cell[1].forEach(layer => {
-					const layerElm = cellLayers[layer[0]];
+			cols.forEach(col => {
+				const layers = col.split(':');
+				const cellX = layers.shift();
+				const cellLayers = dungeonElm.querySelector(`[data-y="${ cellY }"][data-x="${ cellX }"]`).children;
 
-					if (layer[1] !== null) {
-						layerElm.dataset.tile = layer[1];
+				layers.forEach(layer => {
+					const entities = layer.split(',');
+					const [layerIndex, tileType] = entities.shift().split('.');
+					const layerElm = cellLayers[layerIndex];
+
+					if (tileType) {
+						layerElm.dataset.tile = tileType;
 					}
 
-					if (layer[2]) {
-						layer[2].forEach(entity => {
-							if (entity[0] === 'tooltip') {
-								for (const [category, value] of Object.entries(entity[1])) {
-									for (const [type, content] of Object.entries(value)) {
-										addTooltip(layerElm, category, type, content);
-									}
+					entities.forEach(entityKey => {
+						const entityCategory = entityKey[0];
+						const entity = data[2][entityCategory][entityKey.slice(1)];
+
+						if (entityCategory === 't') {
+							for (const [category, value] of Object.entries(entity)) {
+								for (const [type, content] of Object.entries(value)) {
+									addTooltip(layerElm, category, type, content);
 								}
-							} else {
-								const entityElm = document.createElement('div');
-
-								entityElm.className = entity[0];
-
-								if (entity[1]) {
-									for (const [key, value] of Object.entries(entity[1])) {
-										entityElm.dataset[key] = value;
-									}
-								}
-
-								layerElm.append(entityElm);
 							}
-						});
-					}
+						} else {
+							const entityElm = document.createElement('div');
+
+							entityElm.className = entityClassMap[entityCategory];
+							entityElm.dataset.type = entity[0];
+
+							if (entity[1]) {
+								for (const [key, value] of Object.entries(entity[1])) {
+									entityElm.dataset[key] = value;
+								}
+							}
+
+							layerElm.append(entityElm);
+						}
+					});
 				})
 			});
 		});
@@ -2403,43 +2477,24 @@
 	}
 
 	function resetDungeon() {
-		const data = {
-			dungeon: {
-				x: {
-					min: -1,
-					max: 1
-				},
-				y: {
-					min: -1,
-					max: 1
-				},
-				floors: {
-					count: 1,
-					min: 0,
-					max: 0
-				},
-				player: {
-					x: 0,
-					y: 0,
-					floor: 0,
-					direction: 0,
-				},
-				mode: 'edit'
-			},
-			tiles: []
-		};
+		const data = [
+			'-1,1,-1,1,0,0,0,0,0,0,0',
+			''
+		];
 
 		initializeDungeon(data);
 	}
 
 	function validateFormat(data) {
-		if (!data.dungeon || !['x', 'y', 'floors', 'player'].every(prop => data.dungeon.hasOwnProperty(prop))) return {success: false, message: 'Basic dungeon data missing'};
-		if (!data.tiles || !Array.isArray(data.tiles)) return {success: false, message: 'No tiles defined'};
-		if (!['x', 'y', 'floors'].every(prop => {
-			const range = data.dungeon[prop];
+		if (!Array.isArray(data)) return {success: false, message: 'Invalid data format'};
 
-			return range !== 'undefined' && range !== null && !Number.isNaN(range.min) && !Number.isNaN(range.max) && range.min <= range.max
-		}) || !data.dungeon.floors.count || Number.isNaN(data.dungeon.floors.count)) return {success: false, message: 'Invalid dungeon dimensions'};
+		const dungeonData = data[0].split(',');
+
+		if (!dungeonData.length >= 11 || !dungeonData.every(value => !Number.isNaN(value))) return {success: false, message: 'Basic dungeon data missing'};
+		if (!data[1]) return {success: false, message: 'No tiles defined'};
+		if (![0, 2, 4].every(index => {
+			return dungeonData[index] <= dungeonData[index + 1];
+		})) return {success: false, message: 'Invalid dungeon dimensions'};
 
 		return {success: true};
 	}
