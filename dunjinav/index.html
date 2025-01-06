@@ -1212,29 +1212,31 @@
 		while(fitAxis('x', addColumn, removeColumn));
 		while(fitAxis('y', addRow, removeRow));
 
-		const invalidConnections = dungeonElm.querySelectorAll('[data-unlinked].connection');
+		window.requestAnimationFrame(() => {
+			const invalidConnections = dungeonElm.querySelectorAll('[data-unlinked].connection');
 
-		invalidConnections.forEach(connection => {
-			const [targetFloor, targetX, targetY] = connection.dataset.target.split(',');
+			invalidConnections.forEach(connection => {
+				const [targetFloor, targetX, targetY] = connection.dataset.target.split(',');
 
-			if (!dungeonElm.querySelector(`[data-x="${targetX}"][data-y="${targetY}"]`)) {
-				removeConnection(connection);
+				if (!dungeonElm.querySelector(`[data-x="${targetX}"][data-y="${targetY}"]`)) {
+					removeConnection(connection);
+				}
+			});
+
+			if (invalidConnections.length) {
+				calculateGridSize();
+			} else {
+				const connectionTargetX = document.getElementById('connectionTargetX');
+				const connectionTargetY = document.getElementById('connectionTargetY');
+
+				connectionTargetX.min = dungeon.x.min;
+				connectionTargetX.max = dungeon.x.max;
+				connectionTargetY.min = dungeon.y.min;
+				connectionTargetY.max = dungeon.y.max;
+
+				dungeonElm.classList.toggle('offset-color', (dungeon.x.min & 1) !== (dungeon.y.min & 1));
 			}
 		});
-
-		if (invalidConnections.length) {
-			calculateGridSize();
-		} else {
-			const connectionTargetX = document.getElementById('connectionTargetX');
-			const connectionTargetY = document.getElementById('connectionTargetY');
-
-			connectionTargetX.min = dungeon.x.min;
-			connectionTargetX.max = dungeon.x.max;
-			connectionTargetY.min = dungeon.y.min;
-			connectionTargetY.max = dungeon.y.max;
-
-			dungeonElm.classList.toggle('offset-color', (dungeon.x.min & 1) !== (dungeon.y.min & 1));
-		}
 	}
 
 	function addRow(rowIndex) {
@@ -2206,7 +2208,7 @@
 
 		switch(category) {
 			case 'connection':
-				converted += `:${dataset.target}:${dataset.unlinked ? '1' : ''}`;
+				converted += `:${dataset.target}${dataset.unlinked ? ':1' : ''}`;
 				break;
 			case 'door':
 				converted += `:${dataset.direction === '4' ? '' : dataset.direction}`;
@@ -2224,12 +2226,11 @@
 		const data = {};
 
 		const categoryMap = {
-			connections: 'connection',
 			doors: 'door',
 			'points-of-interest': 'point-of-interest'
 		};
 
-		tooltip?.querySelectorAll('[data-category]').forEach(category => {
+		tooltip?.querySelectorAll('[data-category]:not([data-category="connections"])').forEach(category => {
 			category.querySelectorAll('[data-type]').forEach(type => {
 				const content = type.querySelector('.content')?.innerText;
 
@@ -2472,13 +2473,18 @@
 
 						if (entityCategory === 'd' && !entityValues[1]) {
 							entityValues[1] = '4';
-						} else if (entityCategory === 'c' && entityValues[2]) {
-							entityValues[2] = 'true';
+						} else if (entityCategory === 'c') {
+							const [targetFloorID, targetX, targetY] = entityValues[1].split(',');
+							entityValues[3] = `${targetFloorID < 0 ? `B${Math.abs(targetFloorID)}` : `F${parseInt(targetFloorID) + 1}`} (${targetX},${targetY})`;
+
+							if (entityValues[2]) {
+								entityValues[2] = 'true';
+							}
 						}
 
 						entityValues.forEach((value, index) => {
 							if (tooltipIndex !== -1 && index === tooltipIndex) {
-								addTooltip(layerElm, categoryMap[entityCategory], entityCategory === 'd' ? (entityValues[1] ?? '4') : entityValues[0], data[2].t[value]);
+								addTooltip(layerElm, categoryMap[entityCategory], entityCategory === 'd' ? (entityValues[1] ?? '4') : entityValues[0], entityCategory === 'c' ? entityValues[3] : data[2].t[value]);
 							} else {
 								entityElm.dataset[entityDatasetMap[entityCategory][index]] = value;
 							}
