@@ -343,14 +343,14 @@
 		background-color: #fff6;
 	}
 
-	.clear {
+	.mark[data-type="clear"] {
 		background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23666' stroke='%23333' d='M2 3V2h1l5 5 5-5h1v1L9 8l5 5v1h-1L8 9l-5 5H2v-1l5-5Z'/></svg>");
 		z-index: 10;
 	}
 
-	.check-later {
+	.mark[data-type="check-later"] {
 		opacity: .8;
-		background-color: red !important;
+		background-image: radial-gradient(#fff 25%, transparent 75%) !important;
 	}
 
 	.start-position::after,
@@ -1136,7 +1136,7 @@
 		dungeonElm.querySelector('.connection-target')?.classList.remove('connection-target');
 
 		playerCell.classList.add('active');
-		playerCell.querySelector('.check-later')?.remove();
+		playerCell.querySelector('[data-type="check-later"]')?.remove();
 		playerCell.append(playerElm);
 
 		if (dungeon.mode === 'edit' && (playerCoords.x <= dungeon.x.min || playerCoords.x >= dungeon.x.max || playerCoords.y <= dungeon.y.min || playerCoords.y >= dungeon.y.max)) {
@@ -1154,13 +1154,14 @@
 		const targetCell = findNeighborCell(playerCoords.x, playerCoords.y, playerFloor.index, playerDirection);
 
 		if (!targetCell.dataset?.tile) {
-			let checkLater = targetCell.querySelector('.check-later');
+			let checkLater = targetCell.querySelector('[data-type="check-later"]');
 
 			if (checkLater) {
 				checkLater.remove();
 			} else {
 				checkLater = document.createElement('div');
-				checkLater.className = 'check-later';
+				checkLater.className = 'mark';
+				checkLater.dataset.type = 'check-later';
 
 				targetCell.append(checkLater);
 			}
@@ -1168,13 +1169,14 @@
 	}
 
 	function toggleClear() {
-		let clear = playerCell.querySelector('.clear');
+		let clear = playerCell.querySelector('[data-type="clear"]');
 
 		if (clear) {
 			clear.remove();
 		} else {
 			clear = document.createElement('div');
-			clear.className = 'clear';
+			clear.className = 'mark';
+			clear.dataset.type = 'clear';
 
 			playerCell.append(clear);
 		}
@@ -1235,6 +1237,16 @@
 	}
 
 	function removeRow(rowIndex) {
+		dungeonElm.querySelectorAll(`tr:nth-child(${rowIndex + 1}) .connection:not([data-unlinked]), tr:nth-child(${rowIndex + 1}) .door:not([data-direction="4"])`).forEach(linkedEntity => {
+			if (linkedEntity.className === 'door') {
+				const parent = linkedEntity.parentElement;
+
+				removeDoor(linkedEntity, Array.from(parent.parentElement.children).indexOf(parent));
+			} else {
+				removeConnection(linkedEntity);
+			}
+		});
+
 		dungeonElm.deleteRow(rowIndex);
 
 		!rowIndex ? dungeon.y.min++ : dungeon.y.max--;
@@ -1254,6 +1266,16 @@
 
 	function removeColumn(colIndex) {
 		dungeonElm.querySelectorAll('tr').forEach(elm => {
+			elm.querySelectorAll(`td:nth-child(${colIndex + 1}) .connection:not([data-unlinked]), td:nth-child(${colIndex + 1}) .door:not([data-direction="4"])`).forEach(linkedEntity => {
+				if (linkedEntity.className === 'door') {
+					const parent = linkedEntity.parentElement;
+
+					removeDoor(linkedEntity, Array.from(parent.parentElement.children).indexOf(parent));
+				} else {
+					removeConnection(linkedEntity);
+				}
+			});
+
 			elm.deleteCell(colIndex);
 		});
 
@@ -2176,18 +2198,19 @@
 
 	function convertDataset(dataset, category, tooltip) {
 		let converted = dataset.type;
+		let type = category === 'door' ? dataset.direction : dataset.type;
 
 		switch(category) {
 			case 'connection':
 				converted += `:${dataset.target}:${dataset.unlinked ? '1' : ''}`;
 				break;
 			case 'door':
-				converted += `:${dataset.direction}`;
+				converted += `:${dataset.direction === '4' ? '' : dataset.direction}`;
 				break;
 		}
 
-		if (tooltip[category]?.[dataset.type]) {
-			converted += `:${tooltip[category][dataset.type]}`;
+		if (tooltip[category]?.[type] !== undefined) {
+			converted += `:${tooltip[category][type]}`;
 		}
 
 		return converted;
@@ -2208,13 +2231,16 @@
 
 				if (content) {
 					const categoryLabel = categoryMap[category.dataset.category];
-					data[categoryLabel] = {};
+
+					if (!data[categoryLabel]) {
+						data[categoryLabel] = {};
+					}
 
 					if (!entityData.t) {
 						entityData.t = [];
 					}
 
-					data[categoryLabel][type.dataset.type] = `t${findOrInsertEntity(entityData.t, content)}`;
+					data[categoryLabel][type.dataset.type] = findOrInsertEntity(entityData.t, content);
 				}
 			});
 		});
@@ -2272,7 +2298,6 @@
 							}
 
 							const entityElm = convertDataset(entity.dataset, entity.className, layerTooltip);
-
 							entityArray.push(`${entityDataLabel}${findOrInsertEntity(entityData[entityDataLabel], entityElm)}`);
 						}
 					});
@@ -2346,6 +2371,7 @@
 		const entityClassMap = {
 			c: 'connection',
 			d: 'door',
+			m: 'mark',
 			p: 'point-of-interest'
 		};
 
@@ -2356,8 +2382,9 @@
 		};
 
 		const entityDatasetMap = {
-			c: ['type', 'target', 'tooltip', 'unlinked'],
+			c: ['type', 'target', 'unlinked', 'tooltip'],
 			d: ['type', 'direction', 'tooltip'],
+			m: ['type'],
 			p: ['type', 'tooltip']
 		};
 
@@ -2434,14 +2461,20 @@
 
 					entities.forEach(entityKey => {
 						const entityCategory = entityKey[0];
-						const entityValues = data[2][entityCategory][entityKey.slice(1)].split(':')
+						const entityValues = data[2][entityCategory][entityKey.slice(1)].split(':');
 						const entityElm = document.createElement('div');
-						const tooltipIndex = entityDatasetMap[entityCategory].length - 1;
+						const tooltipIndex = entityDatasetMap[entityCategory].indexOf('tooltip');
 						entityElm.className = entityClassMap[entityCategory];
 
+						if (entityCategory === 'd' && !entityValues[1]) {
+							entityValues[1] = '4';
+						} else if (entityCategory === 'c' && entityValues[2]) {
+							entityValues[2] = 'true';
+						}
+
 						entityValues.forEach((value, index) => {
-							if (index === tooltipIndex) {
-								addTooltip(layerElm, categoryMap[entityCategory], entityValues[0], data[2].t[tooltipIndex]);
+							if (tooltipIndex !== -1 && index === tooltipIndex) {
+								addTooltip(layerElm, categoryMap[entityCategory], entityCategory === 'd' ? (entityValues[1] ?? '4') : entityValues[0], data[2].t[value]);
 							} else {
 								entityElm.dataset[entityDatasetMap[entityCategory][index]] = value;
 							}
