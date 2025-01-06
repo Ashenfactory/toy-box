@@ -1165,6 +1165,8 @@
 
 				targetCell.append(checkLater);
 			}
+
+			calculateGridSize();
 		}
 	}
 
@@ -1185,7 +1187,7 @@
 	function fitAxis(axis, addFn, removeFn) {
 		const axisMin = dungeon[axis].min;
 		const axisMax = dungeon[axis].max;
-		const queryTile = value => dungeonElm.querySelector(`[data-${axis}="${value}"] [data-tile]`);
+		const queryTile = value => dungeonElm.querySelector(`[data-${axis}="${value}"] [data-tile], [data-${axis}="${value}"] > div > div`);
 
 		let recalculate = false;
 
@@ -1210,15 +1212,29 @@
 		while(fitAxis('x', addColumn, removeColumn));
 		while(fitAxis('y', addRow, removeRow));
 
-		const connectionTargetX = document.getElementById('connectionTargetX');
-		const connectionTargetY = document.getElementById('connectionTargetY');
+		const invalidConnections = dungeonElm.querySelectorAll('[data-unlinked].connection');
 
-		connectionTargetX.min = dungeon.x.min;
-		connectionTargetX.max = dungeon.x.max;
-		connectionTargetY.min = dungeon.y.min;
-		connectionTargetY.max = dungeon.y.max;
+		invalidConnections.forEach(connection => {
+			const [targetFloor, targetX, targetY] = connection.dataset.target.split(',');
 
-		dungeonElm.classList.toggle('offset-color', (dungeon.x.min & 1) !== (dungeon.y.min & 1));
+			if (!dungeonElm.querySelector(`[data-x="${targetX}"][data-y="${targetY}"]`)) {
+				removeConnection(connection);
+			}
+		});
+
+		if (invalidConnections.length) {
+			calculateGridSize();
+		} else {
+			const connectionTargetX = document.getElementById('connectionTargetX');
+			const connectionTargetY = document.getElementById('connectionTargetY');
+
+			connectionTargetX.min = dungeon.x.min;
+			connectionTargetX.max = dungeon.x.max;
+			connectionTargetY.min = dungeon.y.min;
+			connectionTargetY.max = dungeon.y.max;
+
+			dungeonElm.classList.toggle('offset-color', (dungeon.x.min & 1) !== (dungeon.y.min & 1));
+		}
 	}
 
 	function addRow(rowIndex) {
@@ -1237,16 +1253,6 @@
 	}
 
 	function removeRow(rowIndex) {
-		dungeonElm.querySelectorAll(`tr:nth-child(${rowIndex + 1}) .connection:not([data-unlinked]), tr:nth-child(${rowIndex + 1}) .door:not([data-direction="4"])`).forEach(linkedEntity => {
-			if (linkedEntity.className === 'door') {
-				const parent = linkedEntity.parentElement;
-
-				removeDoor(linkedEntity, Array.from(parent.parentElement.children).indexOf(parent));
-			} else {
-				removeConnection(linkedEntity);
-			}
-		});
-
 		dungeonElm.deleteRow(rowIndex);
 
 		!rowIndex ? dungeon.y.min++ : dungeon.y.max--;
@@ -1266,16 +1272,6 @@
 
 	function removeColumn(colIndex) {
 		dungeonElm.querySelectorAll('tr').forEach(elm => {
-			elm.querySelectorAll(`td:nth-child(${colIndex + 1}) .connection:not([data-unlinked]), td:nth-child(${colIndex + 1}) .door:not([data-direction="4"])`).forEach(linkedEntity => {
-				if (linkedEntity.className === 'door') {
-					const parent = linkedEntity.parentElement;
-
-					removeDoor(linkedEntity, Array.from(parent.parentElement.children).indexOf(parent));
-				} else {
-					removeConnection(linkedEntity);
-				}
-			});
-
 			elm.deleteCell(colIndex);
 		});
 
@@ -1584,6 +1580,7 @@
 				targetElm.setAttribute('data-tile', tileType);
 			} else {
 				targetElm.removeAttribute('data-tile');
+				targetElm.classList.remove('start-position');
 			}
 
 			targetElm.querySelectorAll('.connection').forEach(connection => {
@@ -1624,6 +1621,7 @@
 					targetCell.setAttribute('data-tile', tileType);
 				} else {
 					targetCell.removeAttribute('data-tile');
+					targetCell.classList.remove('start-position')
 				}
 			} else {
 				targetCell.querySelectorAll('.connection').forEach(connection => {
@@ -1818,6 +1816,8 @@
 				}
 			}
 		}
+
+		calculateGridSize();
 	}
 
 	function toggleDoor() {
@@ -1877,6 +1877,8 @@
 					addTooltip(neighborCell, 'doors', reverseDirection, tooltip);
 				}
 			}
+
+			calculateGridSize();
 		}
 
 		document.activeElement.blur();
@@ -1940,6 +1942,7 @@
 		if (connectionElm) {
 			removeConnection(connectionElm);
 			clearHighlights();
+			calculateGridSize();
 		} else {
 			const targetX = parseInt(document.getElementById('connectionTargetX').value);
 			const targetY = parseInt(document.getElementById('connectionTargetY').value);
@@ -1986,6 +1989,7 @@
 				}
 
 				createConnection(targetCell, `${ type }${ directions[1] }`, playerFloor.id, playerCoords.x, playerCoords.y);
+				calculateGridSize();
 			}
 
 			createConnection(playerCell, `${ type }${ directions[0] }`, targetFloorID, targetX, targetY, unlinked, true);
@@ -2262,7 +2266,7 @@
 	}
 
 	document.getElementById('save').addEventListener('click', () => {
-		if(!dungeonElm.querySelector(`[data-x="${ dungeon.player.x }"][data-y="${ dungeon.player.y }"]`)) {
+		if(!dungeonElm.querySelector(`[data-tile].start-position`)) {
 			dungeon.player.x = playerCoords.x;
 			dungeon.player.y = playerCoords.y;
 			dungeon.player.floor = playerFloor.id;
