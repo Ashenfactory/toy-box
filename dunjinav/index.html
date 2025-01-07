@@ -821,7 +821,7 @@
 	<fieldset>
 		<legend>Mode</legend>
 
-		<select id="mode">
+		<select id="mode" aria-label="Mode">
 			<option value="edit" selected>Edit</option>
 			<option value="navigate">Navigate</option>
 		</select>
@@ -829,26 +829,24 @@
 	<fieldset class="edit-only">
 		<legend>Tile</legend>
 
-		<div class="input-container">
-			<select id="tileType">
-				<option value="0" selected>Light blue</option>
-				<option value="1">Dark blue</option>
-				<option value="2">Green</option>
-				<option value="3">Yellow</option>
-				<option value="4">Red</option>
-				<option value="5">Brown</option>
-				<option value="6">Purple</option>
-				<option value="7">Pink</option>
-				<option value="8">Light grey</option>
-				<option value="9">Dark grey</option>
-			</select>
-		</div>
+		<select id="tileType" aria-label="Type">
+			<option value="0" selected>Light blue</option>
+			<option value="1">Dark blue</option>
+			<option value="2">Green</option>
+			<option value="3">Yellow</option>
+			<option value="4">Red</option>
+			<option value="5">Brown</option>
+			<option value="6">Purple</option>
+			<option value="7">Pink</option>
+			<option value="8">Light grey</option>
+			<option value="9">Dark grey</option>
+		</select>
 	</fieldset>
 	<fieldset class="edit-only">
 		<legend>Points of interest</legend>
 		
 		<div class="input-row">
-			<select id="pointOfInterestType">
+			<select id="pointOfInterestType" aria-label="Type">
 				<option value="treasure" data-example="Potion" selected>Treasure</option>
 				<option value="encounter" data-example="Dragon">Encounter</option>
 				<option value="npc" data-example="Rowan the Smith">NPC</option>
@@ -869,7 +867,7 @@
 		<legend>Doors</legend>
 
 		<div class="input-row">
-			<select id="doorType">
+			<select id="doorType" aria-label="Type">
 				<option value="normal" data-example="To kitchen" selected>Normal</option>
 				<option value="exit" data-example="To garden">Exit</option>
 				<option value="locked" data-example="Needs green key">Locked</option>
@@ -899,7 +897,7 @@
 		<legend>Connections</legend>
 
 		<div class="input-row">
-			<select id="connectionType">
+			<select id="connectionType" aria-label="Type">
 				<option value="stairway" selected>Stairway</option>
 				<option value="pit">Pit</option>
 				<option value="teleport">Teleport</option>
@@ -916,9 +914,9 @@
 					<option value="0">F1</option>
 					<option value="-1">B1</option>
 				</select>
-				<input id="connectionTargetX" min="-1" max="1" step="1" type="number" value="0">
-				<input id="connectionTargetY" min="-1" max="1" step="1" type="number" value="0">
-				<button id="selectConnectionTarget" type="button"><span class="icon select-icon"></span></button>
+				<input id="connectionTargetX" min="-1" max="1" step="1" type="number" value="0" aria-label="Target X">
+				<input id="connectionTargetY" min="-1" max="1" step="1" type="number" value="0" aria-label="Target Y">
+				<button id="selectConnectionTarget" type="button" aria-label="Select cell"><span aria-hidden="true" class="icon select-icon"></span></button>
 			</div>
 		</div>
 
@@ -964,7 +962,7 @@
 			<label for="startPositionFloor">Starting position</label>
 			<div class="input-row">
 				<button id="setStartPosition" type="button">Set current</button>
-				<button id="selectStartPosition" type="button"><span class="icon select-icon"></span></button>
+				<button id="selectStartPosition" type="button" aria-label="Select cell"><span aria-hidden="true" class="icon select-icon"></span></button>
 			</div>
 		</div>
 	</fieldset>
