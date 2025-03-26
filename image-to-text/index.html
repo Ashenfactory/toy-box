@@ -1,0 +1,345 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Image to Text</title>
+
+	<style>
+		body {
+			margin: 8px;
+			padding: 0;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.content {
+			display: flex;
+			gap: 8px;
+		}
+
+		.container {
+			background-color: #fff;
+			border: 2px solid #000;
+			width: auto;
+		}
+
+		.content > :last-child {
+			flex-grow: 1;
+		}
+
+		.output {
+			margin: 0;
+			transition: filter .25s ease;
+			background-color: #fff;
+		}
+
+		.container .header {
+			padding: 0 4px;
+			background: #ddd;
+			font-weight: bold;
+			border-bottom: 2px solid #000;
+		}
+
+		.form-container {
+			display: flex;
+			gap: 8px;
+		}
+
+		.input-container {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.text {
+			font-family: monospace;
+			font-size: 4px;
+			position: relative;
+		}
+
+		body {
+			font-family: monospace;
+			font-size: 16px;
+			min-height: 100vh;
+		}
+
+		label {
+			font-family: monospace;
+			font-size: 16px;
+			margin-bottom: 4px;
+			font-weight: bold;
+		}
+
+		.gradient {
+			margin: 8px;
+			display: flex;
+			flex-direction: column;
+			flex-wrap: wrap;
+			gap: 2px;
+		}
+
+		.swatch {
+			height: 64px;
+			width: 64px;
+			border: 2px solid #000;
+			font-size: 20px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			font-family: monospace;
+			font-weight: bold;
+		}
+
+		button {
+			margin-bottom: 1rem;
+			background: rgb(220, 220, 220);
+			height: fit-content;
+			align-self: end;
+			display: flex;
+			cursor: pointer;
+		}
+
+		button:hover {
+			opacity: .75;
+		}
+
+		input {
+			width: 20rem;
+		}
+
+		input[type="number"] {
+			width: 4rem;
+		}
+
+		button,
+		input {
+			border-radius: 0;
+			border: 2px solid #000;
+			font-family: monospace;
+			font-size: 16px;
+			margin-bottom: 8px;
+		}
+
+		input[type="file"] {
+			background-color: #fff;
+			border: 2px solid #000;
+		}
+
+		input[type="file"]::file-selector-button {
+			border: none;
+			border-right: 2px solid #000;
+			border-radius: 0;
+			font-family: monospace;
+			font-size: 16px;
+		}
+
+		button[disabled] {
+			cursor:	auto;
+			opacity: .25;
+		}
+
+		.invert {
+			filter: invert(100%);
+		}
+	</style>
+</head>
+<body>
+	<div class="form-container">
+		<div class="input-container">
+			<label>Image</label>
+			<input type="file" id="imageFile">
+		</div>
+		<div class="input-container">
+			<label>Width</label>
+			<input type="number" id="imageSize" value="100" step="1" min="1">
+		</div>
+		<div class="input-container">
+			<label>Character set</label>
+			<input type="text" id="characterMap" value="@#$&%][{}=?<>)|+/(!*;~^&quot;:,-_'.` ">
+		</div>
+		
+		<button id="generate" disabled>Generate</button>
+		<button id="copy" disabled>Copy Output</button>
+	</div>
+
+	<div class="content">
+		<div class="container">
+			<div class="header">Gradient</div>
+			<div id="swatches" class="gradient"></div>
+		</div>
+
+		<div class="container">
+			<div class="header">Output</div>
+			<pre id="output" class="output"></pre>
+		</div>
+	</div>
+
+	<script>
+		const config = {
+			width: 100,
+			image: ''
+		};
+
+		document.getElementById('imageSize').addEventListener('change', e => {
+			config.width = Number(e.target.value);
+		});
+
+		document.getElementById('imageFile').addEventListener('change', e => {
+			if (event.target.files[0]) {
+				config.image = window.URL.createObjectURL(event.target.files[0]);
+				document.getElementById('generate').disabled = false;
+			} else {
+				config.image = '';
+				document.getElementById('generate').disabled = true;
+			}
+		});
+
+		function generateOutput() {
+			const textElm = document.getElementById('output');
+			const canvas = document.createElement("canvas");
+			const gl = canvas.getContext("webgl");
+
+			const image = new Image();
+			image.src = config.image;
+			image.crossOrigin = "anonymous";
+
+			image.onload = () => {
+				textElm.innerHTML = '';
+
+				const canvas = document.createElement("canvas");
+				const ctx = canvas.getContext("2d");
+
+				canvas.width = config.width;
+				canvas.height = Math.floor((config.width / 2) * image.height / image.width);
+
+				ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+				const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+				const pixels = imageData.data;
+
+				for (let y = 0; y < canvas.height; y++) {
+					const text = [];
+
+					for (let x = 0; x < canvas.width; x++) {
+						const index = (y * canvas.width + x) * 4;
+
+						if (pixels[index + 3] === 0) {
+							text.push(' ');
+							continue;
+						}
+
+						const luminance = Math.pow(pixels[index] / 255, 2.2) * .2126 + Math.pow(pixels[index + 1] / 255, 2.2) * .7152 + Math.pow(pixels[index + 2] / 255, 2.2) * .0722;
+
+						const matchedCharacter = swatchData.find(character => luminance <= character.relativeLuminance);
+
+						text.push(matchedCharacter.character);
+					}
+
+					textElm.textContent += text.join('').trimEnd() + '\n';
+				}
+			};
+		}
+
+		const swatches = document.getElementById('swatches');
+		let swatchData = [];
+
+		function mapValue(value, fromMin, fromMax, toMin, toMax) {
+			const fromSize = fromMax - fromMin;
+			const toSize = toMax - toMin;
+
+			const fromPercent = (value - fromMin) / fromSize;
+
+			const result = (fromPercent * toSize) + toMin;
+
+			return result;
+		}
+
+		function generateGradient() {
+			swatches.innerHTML = '';
+			swatchData = [];
+			const characterMap = document.getElementById('characterMap').value.split('');
+
+			characterMap.forEach((character, index) => {
+				const characterCanvas = document.createElement("canvas");
+				const characterCtx = characterCanvas.getContext("2d", {alpha: false});
+
+				characterCanvas.width = 20;
+				characterCanvas.height = 36;
+
+				characterCtx.fillStyle = '#ffffff';
+				characterCtx.fillRect(0, 0, characterCanvas.width, characterCanvas.height);
+				characterCtx.font = '10px monospace';
+				characterCtx.fillStyle = '#000000';
+				characterCtx.textAlign = 'center';
+
+				characterCtx.fillText(character.repeat(3), 10, 10);
+				characterCtx.fillText(character.repeat(3), 10, 21);
+				characterCtx.fillText(character.repeat(3), 10, 32);
+
+				const characterData = characterCtx.getImageData(0, 0, characterCanvas.width, characterCanvas.height);
+				const characterPixels = characterData.data;
+
+				let rTotal = 0;
+				let gTotal = 0;
+				let bTotal = 0;
+
+				const count = characterPixels.length / 4;
+
+				for (let i = 0; i < characterPixels.length; i += 4) {
+					rTotal += characterPixels[i];
+					gTotal += characterPixels[i + 1];
+					bTotal += characterPixels[i + 2];
+				}
+
+				const average = [Math.round(rTotal / count), Math.round(gTotal / count), Math.round(bTotal / count)];
+				const luminance = Math.pow(average[0] / 255, 2.2) * .2126 + Math.pow(average[1] / 255, 2.2) * .7152 + Math.pow(average[2] / 255, 2.2) * .0722;
+
+				swatchData.push({character: character, color: average.join(), luminance: luminance});
+			});
+
+			swatchData.sort((a, b) => a.luminance > b.luminance);
+
+			const minLuminance = swatchData[0].luminance;
+			const maxLuminance = swatchData[swatchData.length - 1].luminance;
+
+			swatchData.forEach((swatch, index) => {
+				swatch.relativeLuminance = mapValue(swatch.luminance, minLuminance, maxLuminance, 0, 1);
+			});
+
+			let sortedCharacterMap = '';
+
+			swatchData.forEach(swatch => {
+				const swatchElm = document.createElement('div');
+				swatchElm.classList.add('swatch');
+				swatchElm.textContent = swatch.character;
+				swatchElm.style.background = `rgb(${ swatch.color })`;
+
+				swatches.appendChild(swatchElm);
+
+				sortedCharacterMap += swatch.character;
+			});
+
+			document.getElementById('characterMap').value = sortedCharacterMap;
+		}
+
+		document.getElementById('generate').addEventListener('click', e => {
+			generateGradient();
+			generateOutput();
+			document.getElementById('copy').disabled = false;
+		});
+
+		document.getElementById('copy').addEventListener('click', e => {
+			document.getElementById('output').classList.add('invert');
+
+			let text = document.getElementById('output').textContent;
+			navigator.clipboard.writeText(text);
+
+			setTimeout(() => {
+				document.getElementById('output').classList.remove('invert');
+			}, 300);
+		});
+
+		generateGradient();
+	</script>
+</body>
+</html>
