@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><path fill='%233f3f74' d='M0 5V3h1V1h3V0h1v1h2v2h1v2H7v2H4v1H3V7H1V5'/><path fill='%235b6ee1' d='M1 5V3h2V0h1v1h1v1h1v1h1v2H5v3H4V7H3V6H2V5'/><path fill='%23639bff' d='M3 5V4h1V3H3v1H2V2h1V1h1v2h1v1h1v2H5v1H4V5h1V4H4v1'/></svg>">
+	<title>Pixel Whirl</title>
+
+	<style>
+		body,
+		html,
+		input,
+		select,
+		option,
+		textarea {
+			font-family: monospace;
+			font-size: 12px;
+		}
+
+		body {
+			background-color: #111;
+			color: #fff;
+		}
+
+		button,
+		input,
+		select,
+		option {
+			border: 0;
+			border-radius: 4px;
+			min-height: 16px;
+			min-width: 16px;
+			padding: 4px 8px;
+		}
+
+		body {
+			margin: 8px;
+			padding: 0;
+		}
+
+		img {
+			display: none;
+		}
+
+		input,
+		select,
+		option {
+			background-color: #3d3d3d;
+			color: #fff;
+		}
+
+		input[type="color"] {
+			padding: 0;
+			height: 24px;
+			width: 32px;
+		}
+
+		button {
+			font-weight: bold;
+			background-color: #333;
+			color: #fff;
+			cursor: pointer;
+			padding: 2px 8px;
+		}
+
+		button:hover {
+			opacity: .75;
+		}
+
+		button[disabled] {
+			opacity: 0.5;
+			cursor: auto;
+		}
+
+		canvas {
+			min-width: 256px;
+			border: 1px solid #000;
+			margin-bottom: 8px;
+			background-color: #fff;
+		}
+
+		img,
+		canvas {
+			image-rendering: pixelated;
+		}
+
+		input::-webkit-outer-spin-button,
+		input::-webkit-inner-spin-button {
+			display: none;
+			-webkit-appearance: none;
+			margin: 0;
+		}
+
+		input[type=number] {
+			-moz-appearance:textfield;
+		}
+
+		input[type="text"] {
+			width: 4rem;
+		}
+
+		input[type="file"] {
+			display: none;
+		}
+
+		.button-control {
+			padding: 0 0 8px 0;
+		}
+
+		.additional-inputs {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.rule-contents {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.rule-contents > div {
+			display: flex;
+		}
+
+		.rule-inputs {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.rule-inputs input {
+			margin-right: 8px;
+		}
+
+		.lead {
+			color: #fff;
+			font-weight: bold;
+			font-size: 16px;
+		}
+
+		.rules-container {
+			counter-reset: rules;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			margin-bottom: 32px;
+		}
+
+		.rule-control {
+			min-height: 40px;
+			display: flex;
+			align-items: flex-end;
+			gap: 8px;
+			background-color: #212121;
+			padding: 8px;
+			border-radius: 4px;
+			width: fit-content;
+			position: relative;
+		}
+
+		.rule-inputs {
+			margin-left: 8px;
+		}
+
+		.rule-control::before {
+			counter-increment: rules;
+			content: counter(rules);
+			align-self: center;
+		}
+
+		p {
+			margin: 0 0 8px 0;
+		}
+
+		.rule-order-control {
+			display: none;
+			position: absolute;
+			top: -5px;
+			left: 3.5px;
+			height: 100%;
+			flex-direction: column;
+			justify-content: space-between;
+		}
+
+		.rule-remove-control {
+			display: none;
+			position: absolute;
+			top: 4px;
+			right: 4px;
+		}
+
+		.rule-control:hover .rule-remove-control {
+			display: block;
+		}
+
+		.rule-control:hover .rule-order-control {
+			display: flex;
+		}
+
+		.image-info {
+			background-color: #212121;
+			padding: 8px;
+			border-radius: 4px;
+			width: fit-content;
+			min-width: 256px;
+			margin-bottom: 16px;
+		}
+
+		.image-info label {
+			font-weight: bold;
+		}
+
+		.rule-remove,
+		.rule-down,
+		.rule-up {
+			width: 16px;
+			height: 16px;
+			font-size: 16px;
+			vertical-align: baseline;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			font-weight: bold;
+			cursor: pointer;
+		}
+
+		.rule-remove:hover,
+		.rule-down:hover,
+		.rule-up:hover {
+			opacity: .5;
+		}
+
+		.rule-control:first-child .rule-order-control {
+			justify-content: flex-end;
+		}
+
+		.rule-control:first-child .rule-up {
+			display: none;
+		}
+
+		.rule-control:last-child .rule-down {
+			display: none;
+		}
+
+		.rule-name {
+			margin-left: 8px;
+			font-weight: bold;
+		}
+	</style>
+</head>
+<body>
+	<input id="image-input" type="file" accept="image/*">
+
+	<img id="preview" src="#">
+
+	<canvas id="canvas"></canvas>
+
+	<div class="button-control">
+		<button type="button" id="load-image">Load</button>
+		<button type="button" id="update-image" disabled>Update</button>
+		<button type="button" id="save-image" disabled>Save</button>
+	</div>
+
+	<div class="image-info">
+		<p><label>Width:</label> <span id="image-width"></span></p>
+		<p><label>Height:</label> <span id="image-height"></span></p>
+		<p><label>X divisors:</label> <span id="x-divisors"></span></p>
+		<p><label>Y Divisors:</label> <span id="y-divisors"></span></p>
+	</div>
+
+	<div>
+		<p class="lead">Rules</p>
+
+		<div class="button-control">
+			<select id="rule-type">
+				<option value="shuffle pixels" selected>Shuffle pixels</option>
+				<option value="shuffle channels">Shuffle channels</option>
+				<option value="move">Move</option>
+				<option value="invert">Invert</option>
+				<option value="paint">Paint</option>
+			</select>
+			<button type="button" class="primary" id="add-rule">+</button>
+		</div>
+
+		<div id="rules" class="rules-container"></div>
+	</div>
+
+	<template id="base-rule">
+		<div class="rule-control" data-type="">
+			<div class="rule-order-control">
+				<button type="button" class="rule-up">🢑</button>
+				<button type="button" class="rule-down">🢓</button>
+			</div>
+
+			<div class="rule-contents">
+				<p class="rule-name" contenteditable></p>
+				
+				<div>
+					<div class="rule-inputs">
+						<label>%</label>
+						<input name="frequency" type="number" min="0" max="100" value="5">
+
+						<label>X1</label>
+						<input name="x1" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" value="0">
+
+						<label>Y1</label>
+						<input name="y1" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" value="0">
+
+						<label>X2</label>
+						<input name="x2" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" value="1">
+
+						<label>Y2</label>
+						<input name="y2" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" value="1">
+
+						<label>X inc</label>
+						<input name="dx" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" data-min="1" value="1">
+
+						<label>Y inc</label>
+						<input name="dy" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" data-min="1" value="1">
+					</div>
+				</div>
+			</div>
+
+			<div class="rule-remove-control">
+				<button type="button" class="rule-remove">×</button>
+			</div>
+		</div>
+	</template>
+
+	<template id="paint-rule">
+		<div class="additional-inputs">
+			<label>color</label>
+			<input name="color" type="color" value="#000000">
+		</div>
+	</template>
+
+	<template id="move-rule">
+		<div class="additional-inputs">
+			<label>dest X</label>
+			<input name="ox" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or (<min>, <max>)" value="-1">
+
+			<label>dest Y</label>
+			<input name="oy" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or (<min>, <max>)" value="-1">
+		</div>
+	</template>
+
+	<script>
+		const canvas = document.getElementById('canvas');
+
+		canvas.width = 256;
+		canvas.height = 256;
+
+		const ctx = canvas.getContext('2d'); 
+		const imageInput = document.getElementById('image-input');
+		const img = document.getElementById('preview');
+
+		imageInput.addEventListener('change', e => {
+			if (e.target.files && e.target.files[0]) {
+
+				img.onload = () => {
+					URL.revokeObjectURL(img.src);
+
+					canvas.width = img.width;
+					canvas.height = img.height;
+
+					document.getElementById('image-width').textContent = img.width;
+					document.getElementById('image-height').textContent = img.height;
+					document.getElementById('x-divisors').textContent = getDivisors(img.width).join(', ');
+					document.getElementById('y-divisors').textContent = getDivisors(img.height).join(', ');
+
+					generateImage();
+				}
+
+				img.src = URL.createObjectURL(e.target.files[0]);
+
+				document.getElementById('update-image').removeAttribute('disabled');
+				document.getElementById('save-image').removeAttribute('disabled');
+			}
+		});
+
+		function getRangeValue(container, name) {
+			const elm = container.querySelector(`[name="${ name }"]`); 
+			const value = elm.value.split(',').map(x => Number(x)).sort((a, b) => a - b);
+			const min = elm.dataset.min ? Number(elm.dataset.min) : null;
+
+			value[1] = Math.max(value[1] ?? value[0], min);
+
+			return {
+				min: value[0],
+				max: value[1],
+			};
+		}
+
+		function randomInt(min, max) {
+			return Math.floor(Math.random() * (max - min + 1) + min);
+		}
+
+		function getDivisors(n) {
+			const result = [];
+			const limit = Math.floor(Math.sqrt(n));
+
+			for (let i = 1; i <= limit; i++) {
+				if (n % i === 0) {
+					result.push(i);
+					const j = n / i;
+					if (j !== i) result.push(j);
+				}
+			}
+
+			return result.sort((a, b) => a - b).slice(1, -1);
+		}
+
+		function generateImage() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.drawImage(img, 0, 0);
+
+			const rules = document.getElementById('rules').querySelectorAll('.rule-control');
+
+			rules.forEach(rule => {
+				const values = {
+					frequency: rule.querySelector('[name="frequency"]').value / 100,
+					x1: getRangeValue(rule, 'x1'),
+					y1: getRangeValue(rule, 'y1'),
+					x2: getRangeValue(rule, 'x2'),
+					y2: getRangeValue(rule, 'y2'),
+					dx: getRangeValue(rule, 'dx'),
+					dy: getRangeValue(rule, 'dy'),
+				};
+
+				switch (rule.dataset.type) {
+					case 'paint':
+						values.color = rule.querySelector('[name="color"]').value;
+
+						applyPaintRule(values);
+						break;
+					case 'invert':
+						applyInvertRule(values);
+						break;
+					case 'move':
+						values.ox = getRangeValue(rule, 'ox');
+						values.oy = getRangeValue(rule, 'oy');
+
+						applyMoveRule(values);
+						break;
+					case 'shuffle channels':
+						applyShuffleChannelsRule(values);
+						break;
+					case 'shuffle pixels':
+						applyShufflePixelsRule(values);
+						break;
+				}
+			});
+		}
+
+		function applyPaintRule(values) {
+			ctx.fillStyle = values.color;
+
+			for (let y = 0; y < canvas.height; y += randomInt(values.dy.min, values.dy.max)) {
+				for (let x = 0; x < canvas.width; x += randomInt(values.dx.min, values.dx.max)) {
+					if (Math.random() > values.frequency) continue;
+
+					const x1 = randomInt(values.x1.min, values.x1.max);
+					const y1 = randomInt(values.y1.min, values.y1.max);
+					const x2 = randomInt(values.x2.min, values.x2.max);
+					const y2 = randomInt(values.y2.min, values.y2.max);
+
+					ctx.fillRect(x - x1, y - y1, x2 - x1, y2 - y1);
+				}
+			}
+		}
+
+		function applyMoveRule(values) {
+			for (let y = 0; y < canvas.height; y += randomInt(values.dy.min, values.dy.max)) {
+				for (let x = 0; x < canvas.width; x += randomInt(values.dx.min, values.dx.max)) {
+					if (Math.random() > values.frequency) continue;
+
+					const x1 = randomInt(values.x1.min, values.x1.max);
+					const y1 = randomInt(values.y1.min, values.y1.max);
+					const x2 = randomInt(values.x2.min, values.x2.max);
+					const y2 = randomInt(values.y2.min, values.y2.max);
+
+					if (!(x2 - x1) || !(y2 - y1)) continue;
+
+					const imageData = ctx.getImageData(x - x1, y - y1, x2 - x1, y2 - y1);
+
+					const ox = randomInt(values.ox.min, values.ox.max);
+					const oy = randomInt(values.oy.min, values.oy.max);
+
+					ctx.putImageData(imageData, x + ox, y + oy);
+				}
+			}
+		}
+
+		function applyShuffleChannelsRule(values) {
+			for (let y = 0; y < canvas.height; y += randomInt(values.dy.min, values.dy.max)) {
+				for (let x = 0; x < canvas.width; x += randomInt(values.dx.min, values.dx.max)) {
+					if (Math.random() > values.frequency) continue;
+
+					const x1 = randomInt(values.x1.min, values.x1.max);
+					const y1 = randomInt(values.y1.min, values.y1.max);
+					const x2 = randomInt(values.x2.min, values.x2.max);
+					const y2 = randomInt(values.y2.min, values.y2.max);
+
+					if (!(x2 - x1) || !(y2 - y1)) continue;
+
+					const imageData = ctx.getImageData(x - x1, y - y1, x2 - x1, y2 - y1);
+					const data = imageData.data;
+
+					for (let i = data.length - 1; i > 0; i--) {
+						const j = Math.floor(Math.random() * (i + 1));
+						[data[i], data[j]] = [data[j], data[i]];
+					}
+
+					ctx.putImageData(imageData, x - x1, y - y1);
+				}
+			}
+		}
+
+		function applyShufflePixelsRule(values) {
+			for (let y = 0; y < canvas.height; y += randomInt(values.dy.min, values.dy.max)) {
+				for (let x = 0; x < canvas.width; x += randomInt(values.dx.min, values.dx.max)) {
+					if (Math.random() > values.frequency) continue;
+
+					const x1 = randomInt(values.x1.min, values.x1.max);
+					const y1 = randomInt(values.y1.min, values.y1.max);
+					const x2 = randomInt(values.x2.min, values.x2.max);
+					const y2 = randomInt(values.y2.min, values.y2.max);
+
+					if (!(x2 - x1) || !(y2 - y1)) continue;
+
+					const imageData = ctx.getImageData(x - x1, y - y1, x2 - x1, y2 - y1);
+					const data = new Uint32Array(imageData.data.buffer);
+
+					for (let i = data.length - 1; i > 0; i--) {
+						const j = Math.floor(Math.random() * (i + 1));
+						[data[i], data[j]] = [data[j], data[i]];
+					}
+
+					imageData.data = new Uint8ClampedArray(data);
+
+					ctx.putImageData(imageData, x - x1, y - y1);
+				}
+			}
+		}
+
+		function applyInvertRule(values) {
+			for (let y = 0; y < canvas.height; y += randomInt(values.dy.min, values.dy.max)) {
+				for (let x = 0; x < canvas.width; x += randomInt(values.dx.min, values.dx.max)) {
+					if (Math.random() > values.frequency) continue;
+
+					const x1 = randomInt(values.x1.min, values.x1.max);
+					const y1 = randomInt(values.y1.min, values.y1.max);
+					const x2 = randomInt(values.x2.min, values.x2.max);
+					const y2 = randomInt(values.y2.min, values.y2.max);
+
+					if (!(x2 - x1) || !(y2 - y1)) continue;
+
+					const imageData = ctx.getImageData(x - x1, y - y1, x2 - x1, y2 - y1);
+					const data = imageData.data;
+
+					for (let i = 0; i < data.length; i += 4) {
+						data[i] = 255 - data[i];
+						data[i + 1] = 255 - data[i + 1];
+						data[i + 2] = 255 - data[i + 2];
+					}
+
+					ctx.putImageData(imageData, x - x1, y - y1);
+				}
+			}
+		}
+
+		document.getElementById('add-rule').addEventListener('click', () => {
+			const ruleType = document.getElementById('rule-type').value;
+
+			const template = document.getElementById('base-rule').content.cloneNode(true);
+			const additionalInputs = document.getElementById(`${ ruleType }-rule`);
+
+			template.querySelector('.rule-name').textContent = ruleType;
+			template.querySelector('.rule-control').dataset.type = ruleType;
+
+			if (additionalInputs) {
+				template.querySelector('.rule-inputs').after(additionalInputs.content.cloneNode(true));
+			}
+
+			document.getElementById('rules').appendChild(template);
+		});
+
+		document.getElementById('update-image').addEventListener('click', generateImage);
+
+		document.getElementById('load-image').addEventListener('click', () => {
+			imageInput.click();
+		});
+
+		document.addEventListener('focusout', e => {
+			if (e.target.matches('input')) {
+				e.target.reportValidity();
+			}
+		});
+
+		document.getElementById('rules').addEventListener('click', e => {
+			if (e.target.matches('.rule-up')) {
+				const targetRule = e.target.closest('.rule-control');
+
+				targetRule.previousElementSibling?.before(targetRule);
+			} else if (e.target.matches('.rule-down')) {
+				const targetRule = e.target.closest('.rule-control');
+
+				targetRule.nextElementSibling?.after(targetRule);
+			} else if (e.target.matches('.rule-remove')) {
+				e.target.closest('.rule-control').remove();
+			}
+		});
+
+		document.addEventListener('dragover', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+		});
+
+		document.addEventListener('drop', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+
+			const files = e.dataTransfer.files;
+
+			if (files.length > 0) {
+				const file = files[0];
+
+				if (file.type.startsWith('image/')) {
+					imageInput.files = files;
+					imageInput.dispatchEvent(new Event('change'));
+				}
+			}
+		});
+
+		window.addEventListener('load', () => {
+			if (imageInput.files) {
+				imageInput.dispatchEvent(new Event('change'));
+			}
+		});
+	</script>
+</body>
+</html>
