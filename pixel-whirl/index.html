@@ -20,6 +20,8 @@
 		body {
 			background-color: #111;
 			color: #fff;
+			margin: 16px;
+			padding: 0;
 		}
 
 		button,
@@ -31,11 +33,6 @@
 			min-height: 16px;
 			min-width: 16px;
 			padding: 4px 8px;
-		}
-
-		body {
-			margin: 8px;
-			padding: 0;
 		}
 
 		img {
@@ -74,9 +71,15 @@
 
 		canvas {
 			min-width: 256px;
+			max-height: 256px;
 			border: 1px solid #000;
-			margin-bottom: 8px;
-			background-color: #fff;
+			margin-bottom: 16px;
+			background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'><path d='M1 2V0h1v1H0v1z' fill='%23eee'/></svg>") 0 0/16px 16px #fff;
+			cursor: pointer;
+		}
+
+		canvas:hover {
+			opacity: .75;
 		}
 
 		img,
@@ -89,6 +92,23 @@
 			display: none;
 			-webkit-appearance: none;
 			margin: 0;
+		}
+
+		.scale-control input {
+			width: 3rem;
+			text-align: center;
+			margin: 0 4px;
+		}
+
+		.scale-control {
+			margin-bottom: 8px;
+			display: flex;
+			gap: 4px;
+			flex-direction: column;
+		}
+
+		.scale-control > div {
+			display: flex;
 		}
 
 		input[type=number] {
@@ -104,13 +124,22 @@
 		}
 
 		.button-control {
+			display: flex;
 			padding: 0 0 8px 0;
+			margin-bottom: 8px;
+			gap: 8px;
 		}
 
 		.additional-inputs {
 			display: flex;
 			align-items: center;
 			gap: 8px;
+		}
+
+		.scale-container {
+			gap: 16px;
+			display: flex;
+			margin-bottom: 8px;
 		}
 
 		.rule-contents {
@@ -210,6 +239,13 @@
 			font-weight: bold;
 		}
 
+		.lead-container {
+			display: flex;
+			gap: 8px;
+			align-items: baseline;
+			margin-bottom: 8px;
+		}
+
 		.rule-remove,
 		.rule-down,
 		.rule-up {
@@ -246,38 +282,89 @@
 			margin-left: 8px;
 			font-weight: bold;
 		}
+
+		.rule-info {
+			margin: 8px 0 0 8px;
+			margin-top: 8px;
+			font-style: italic;
+			opacity: 0.5;
+		}
+
+		input[type="text"].wide-text {
+			width: 8rem;
+		}
 	</style>
 </head>
 <body>
 	<input id="image-input" type="file" accept="image/*">
-
 	<img id="preview" src="#">
-
-	<canvas id="canvas"></canvas>
 
 	<div class="button-control">
 		<button type="button" id="load-image">Load</button>
-		<button type="button" id="update-image" disabled>Update</button>
+		<input type="text" class="wide-text" id="image-name" disabled>
 		<button type="button" id="save-image" disabled>Save</button>
 	</div>
 
+	<canvas id="canvas"></canvas>
+
+	<div class="scale-container">
+		<div class="scale-control">
+			<label>Input scale</label>
+			<div class="scale-input">
+				<button class="decrement-scale">-</button>
+				<input id="input-scale" type="number" value="1" readonly>
+				<button class="increment-scale">+</button>
+			</div>
+		</div>
+
+		<div class="scale-control">
+			<label>Output scale</label>
+			<div class="scale-input">
+				<button class="decrement-scale">-</button>
+				<input id="output-scale" type="number" value="1" readonly>
+				<button class="increment-scale">+</button>
+			</div>
+		</div>
+	</div>
+
 	<div class="image-info">
-		<p><label>Width:</label> <span id="image-width"></span></p>
-		<p><label>Height:</label> <span id="image-height"></span></p>
-		<p><label>X divisors:</label> <span id="x-divisors"></span></p>
-		<p><label>Y Divisors:</label> <span id="y-divisors"></span></p>
+		<p>
+			<label>Width:</label>
+			<span id="image-width">-</span>
+		</p>
+		<p>
+			<label>Height:</label>
+			<span id="image-height">-</span>
+		</p>
+		<p>
+			<label>X divisors:</label>
+			<span id="x-divisors">-</span>
+		</p>
+		<p>
+			<label>Y Divisors:</label>
+			<span id="y-divisors">-</span>
+		</p>
 	</div>
 
 	<div>
-		<p class="lead">Rules</p>
+		<div class="lead-container">
+			<p class="lead">Rules</p>
+			<button type="button" id="update-image" disabled>Apply</button>
+		</div>
 
 		<div class="button-control">
 			<select id="rule-type">
 				<option value="shuffle pixels" selected>Shuffle pixels</option>
 				<option value="shuffle channels">Shuffle channels</option>
-				<option value="move">Move</option>
-				<option value="invert">Invert</option>
-				<option value="paint">Paint</option>
+				<option value="shuffle channel order">Shuffle channel order</option>
+				<option value="shift channels">Shift channels</option>
+				<option value="rotate region">Rotate region</option>
+				<option value="scramble colors">Scramble colors</option>
+				<option value="remap colors">Remap colors</option>
+				<option value="move pixels">Move pixels</option>
+				<option value="invert colors">Invert colors</option>
+				<option value="paint region">Paint region</option>
+				<option value="noise region">Noise region</option>
 			</select>
 			<button type="button" class="primary" id="add-rule">+</button>
 		</div>
@@ -313,12 +400,14 @@
 						<input name="y2" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" value="1">
 
 						<label>X inc</label>
-						<input name="dx" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" data-min="1" value="1">
+						<input name="ix" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" data-min="1" value="1">
 
 						<label>Y inc</label>
-						<input name="dy" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" data-min="1" value="1">
+						<input name="iy" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or [<min>, <max>]" inputmode="number" data-min="1" value="1">
 					</div>
 				</div>
+
+				<p class="rule-info"></p>
 			</div>
 
 			<div class="rule-remove-control">
@@ -327,61 +416,126 @@
 		</div>
 	</template>
 
-	<template id="paint-rule">
+	<template id="paint region-rule">
 		<div class="additional-inputs">
 			<label>color</label>
 			<input name="color" type="color" value="#000000">
 		</div>
 	</template>
 
-	<template id="move-rule">
+	<template id="move pixels-rule">
 		<div class="additional-inputs">
-			<label>dest X</label>
-			<input name="ox" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or (<min>, <max>)" value="-1">
+			<label>Dest X</label>
+			<input name="dx" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or (<min>, <max>)" value="-1">
 
-			<label>dest Y</label>
-			<input name="oy" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or (<min>, <max>)" value="-1">
+			<label>Dest Y</label>
+			<input name="dy" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or (<min>, <max>)" value="-1">
+		</div>
+	</template>
+
+	<template id="shift channels-rule">
+		<div class="additional-inputs">
+			<label>Shift dist</label>
+			<input name="dx" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or (<min>, <max>)" value="-1, 1">
+		</div>
+	</template>
+
+	<template id="rotate region-rule">
+		<div class="additional-inputs">
+			<label>Turns</label>
+			<input name="turn" type="text" pattern="-?\d+(\s*,\s*-?\d+)?" title="<number> or (<min>, <max>)" value="1">
 		</div>
 	</template>
 
 	<script>
+		const rulesInfo = {
+			'paint region': 'Paints the affected region in the specified color',
+			'invert colors': 'Inverts the colors of the affected region',
+			'move pixels': 'Moves the affected region to the target coordinates (Dest X and Dest Y)',
+			'shift channels': 'Shifts the color channels in the affected region by the specified distance (Shift dist)',
+			'shuffle channel order': 'Reorders the color channels in the affected region',
+			'shuffle channels': 'Randomly shuffles the color channels in the affected region',
+			'shuffle pixels': 'Randomly shuffles the pixels within the affected region',
+			'rotate region': 'Rotates the region in 90 degree increments (Turns)',
+			'remap colors': 'Reassigns all colors within the affected region',
+			'scramble colors': 'Randomizes all unique colors within the affected region',
+			'noise region': 'Randomizes the colors of all pixels within the affected region',
+		}
+
 		const canvas = document.getElementById('canvas');
 
 		canvas.width = 256;
 		canvas.height = 256;
 
-		const ctx = canvas.getContext('2d'); 
+		const ctx = canvas.getContext('2d');
+		ctx.imageSmoothingEnabled = false;
+
 		const imageInput = document.getElementById('image-input');
 		const img = document.getElementById('preview');
 
 		imageInput.addEventListener('change', e => {
-			if (e.target.files && e.target.files[0]) {
+			if (imageInput.files && imageInput.files[0]) {
+				const filenameParts = imageInput.files[0].name.split('.');
 
-				img.onload = () => {
-					URL.revokeObjectURL(img.src);
-
-					canvas.width = img.width;
-					canvas.height = img.height;
-
-					document.getElementById('image-width').textContent = img.width;
-					document.getElementById('image-height').textContent = img.height;
-					document.getElementById('x-divisors').textContent = getDivisors(img.width).join(', ');
-					document.getElementById('y-divisors').textContent = getDivisors(img.height).join(', ');
-
-					generateImage();
+				if (filenameParts.length > 1) {
+					filenameParts.pop();
 				}
 
-				img.src = URL.createObjectURL(e.target.files[0]);
-
-				document.getElementById('update-image').removeAttribute('disabled');
-				document.getElementById('save-image').removeAttribute('disabled');
+				document.getElementById('image-name').value = filenameParts.join('.') ?? 'image';
 			}
+
+			setImage(e.target);
 		});
+
+		function setImage(input) {
+			if (input.files && input.files[0]) {
+				const tmpImg = new Image();
+
+				tmpImg.onload = () => {
+					img.onload = () => {
+						canvas.width = img.width;
+						canvas.height = img.height;
+
+						const outputScale = Number(document.getElementById('output-scale').value);
+
+						document.getElementById('image-width').textContent = img.width ? (`${ img.width }px → ${ img.width * outputScale }px`) : '-';
+						document.getElementById('image-height').textContent = img.height ? (`${ img.height }px → ${ img.height * outputScale }px`) : '-';
+						document.getElementById('x-divisors').textContent = getDivisors(img.width).join(', ');
+						document.getElementById('y-divisors').textContent = getDivisors(img.height).join(', ');
+
+						generateImage();
+
+						document.getElementById('save-image').disabled = false;
+						document.getElementById('image-name').disabled = false;
+
+						if (document.getElementById('rules').children.length) {
+							document.getElementById('update-image').disabled = false;
+						}
+					}
+
+					const scale = Number(document.getElementById('input-scale').value);
+					img.src = resizeImage(tmpImg, scale);
+				}
+
+				tmpImg.src = URL.createObjectURL(input.files[0]);
+			}
+		}
+
+		function resizeImage(imageElm, scale) {
+			const resizeCanvas = document.createElement('canvas');
+			const resizeCtx = resizeCanvas.getContext('2d');
+
+			resizeCanvas.width = imageElm.width * scale;
+			resizeCanvas.height = imageElm.height * scale;
+
+			resizeCtx.drawImage(imageElm, 0, 0, resizeCanvas.width, resizeCanvas.height);
+			return resizeCanvas.toDataURL();
+		}
 
 		function getRangeValue(container, name) {
 			const elm = container.querySelector(`[name="${ name }"]`); 
 			const value = elm.value.split(',').map(x => Number(x)).sort((a, b) => a - b);
-			const min = elm.dataset.min ? Number(elm.dataset.min) : null;
+			const min = elm.dataset.min ? Number(elm.dataset.min) : -Infinity;
 
 			value[1] = Math.max(value[1] ?? value[0], min);
 
@@ -396,7 +550,7 @@
 		}
 
 		function getDivisors(n) {
-			const result = [];
+			let result = [];
 			const limit = Math.floor(Math.sqrt(n));
 
 			for (let i = 1; i <= limit; i++) {
@@ -407,7 +561,9 @@
 				}
 			}
 
-			return result.sort((a, b) => a - b).slice(1, -1);
+			result = result.sort((a, b) => a - b).slice(1, -1);
+
+			return result.length ? result : ['-'];
 		}
 
 		function generateImage() {
@@ -423,150 +579,373 @@
 					y1: getRangeValue(rule, 'y1'),
 					x2: getRangeValue(rule, 'x2'),
 					y2: getRangeValue(rule, 'y2'),
-					dx: getRangeValue(rule, 'dx'),
-					dy: getRangeValue(rule, 'dy'),
+					ix: getRangeValue(rule, 'ix'),
+					iy: getRangeValue(rule, 'iy'),
 				};
 
 				switch (rule.dataset.type) {
-					case 'paint':
+					case 'paint region':
 						values.color = rule.querySelector('[name="color"]').value;
 
-						applyPaintRule(values);
+						applyPaintRegionRule(values);
 						break;
-					case 'invert':
-						applyInvertRule(values);
+					case 'invert colors':
+						applyInvertColorsRule(values);
 						break;
-					case 'move':
-						values.ox = getRangeValue(rule, 'ox');
-						values.oy = getRangeValue(rule, 'oy');
+					case 'move pixels':
+						values.dx = getRangeValue(rule, 'dx');
+						values.dy = getRangeValue(rule, 'dy');
 
-						applyMoveRule(values);
+						applyMovePixelsRule(values);
 						break;
+					case 'shift channels':
+						values.dx = getRangeValue(rule, 'dx');
+
+						applyShiftChannelsRule(values);
+						break;
+					case 'shuffle channel order':
+						applyShuffleChannelOrderRule(values);
+						break; 
 					case 'shuffle channels':
 						applyShuffleChannelsRule(values);
 						break;
 					case 'shuffle pixels':
 						applyShufflePixelsRule(values);
 						break;
+					case 'reverse channels':
+						applyReverseChannelsRule(values);
+						break;
+					case 'rotate region':
+						values.turns = getRangeValue(rule, 'turn');
+
+						applyRotateRegionRule(values);
+						break;
+					case 'remap colors':
+						applyRemapColorsRule(values);
+						break;
+					case 'scramble colors':
+						applyScrambleColorsRule(values);
+						break;
+					case 'noise region':
+						applyNoiseRegionRule(values);
+						break;
 				}
 			});
 		}
 
-		function applyPaintRule(values) {
-			ctx.fillStyle = values.color;
-
-			for (let y = 0; y < canvas.height; y += randomInt(values.dy.min, values.dy.max)) {
-				for (let x = 0; x < canvas.width; x += randomInt(values.dx.min, values.dx.max)) {
+		function getRegion(values, fn) {
+			for (let gy = 0; gy < canvas.height; gy += randomInt(values.iy.min, values.iy.max)) {
+				for (let gx = 0; gx < canvas.width; gx += randomInt(values.ix.min, values.ix.max)) {
 					if (Math.random() > values.frequency) continue;
 
-					const x1 = randomInt(values.x1.min, values.x1.max);
-					const y1 = randomInt(values.y1.min, values.y1.max);
-					const x2 = randomInt(values.x2.min, values.x2.max);
-					const y2 = randomInt(values.y2.min, values.y2.max);
+					const ox = randomInt(values.x1.min, values.x1.max);
+					const oy = randomInt(values.y1.min, values.y1.max);
+					const w = randomInt(values.x2.min, values.x2.max) - ox;
+					const h = randomInt(values.y2.min, values.y2.max) - oy;
 
-					ctx.fillRect(x - x1, y - y1, x2 - x1, y2 - y1);
+					if (w <= 0 || h <= 0) continue;
+
+					fn({ gx, gy, ox, oy, w, h, values });
 				}
 			}
 		}
 
-		function applyMoveRule(values) {
-			for (let y = 0; y < canvas.height; y += randomInt(values.dy.min, values.dy.max)) {
-				for (let x = 0; x < canvas.width; x += randomInt(values.dx.min, values.dx.max)) {
-					if (Math.random() > values.frequency) continue;
+		function applyPaintRegionRule(values) {
+			getRegion(values, ({ gx, gy, ox, oy, w, h }) => {
+				ctx.fillStyle = values.color;
+				ctx.fillRect(gx + ox, gy + oy, w, h);
+			});
+		}
 
-					const x1 = randomInt(values.x1.min, values.x1.max);
-					const y1 = randomInt(values.y1.min, values.y1.max);
-					const x2 = randomInt(values.x2.min, values.x2.max);
-					const y2 = randomInt(values.y2.min, values.y2.max);
+		function applyMovePixelsRule(values) {
+			getRegion(values, ({ gx, gy, ox, oy, w, h, values }) => {
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
 
-					if (!(x2 - x1) || !(y2 - y1)) continue;
+				const dx = randomInt(values.dx.min, values.dx.max);
+				const dy = randomInt(values.dy.min, values.dy.max);
 
-					const imageData = ctx.getImageData(x - x1, y - y1, x2 - x1, y2 - y1);
-
-					const ox = randomInt(values.ox.min, values.ox.max);
-					const oy = randomInt(values.oy.min, values.oy.max);
-
-					ctx.putImageData(imageData, x + ox, y + oy);
-				}
-			}
+				ctx.putImageData(imageData, gx + dx, gy + dy);
+			});
 		}
 
 		function applyShuffleChannelsRule(values) {
-			for (let y = 0; y < canvas.height; y += randomInt(values.dy.min, values.dy.max)) {
-				for (let x = 0; x < canvas.width; x += randomInt(values.dx.min, values.dx.max)) {
-					if (Math.random() > values.frequency) continue;
+			getRegion(values, ({ gx, gy, ox, oy, w, h, values }) => {
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
+				const data = imageData.data;
 
-					const x1 = randomInt(values.x1.min, values.x1.max);
-					const y1 = randomInt(values.y1.min, values.y1.max);
-					const x2 = randomInt(values.x2.min, values.x2.max);
-					const y2 = randomInt(values.y2.min, values.y2.max);
+				for (let i = 0; i < data.length; i += 4) {
+					for (let j = 0; j < 3; j++) {
+						const k = randomInt(0, j);
+						[data[i + j], data[i + k]] = [data[i + k], data[i + j]];
+					}
+				}
 
-					if (!(x2 - x1) || !(y2 - y1)) continue;
+				ctx.putImageData(imageData, gx + ox, gy + oy);
+			});
+		}
 
-					const imageData = ctx.getImageData(x - x1, y - y1, x2 - x1, y2 - y1);
-					const data = imageData.data;
+		function applyShiftChannelsRule(values) {
+			getRegion(values, ({ gx, gy, ox, oy, w, h, values }) => {
+				const dx = randomInt(values.dx.min, values.dx.max);
 
-					for (let i = data.length - 1; i > 0; i--) {
-						const j = Math.floor(Math.random() * (i + 1));
-						[data[i], data[j]] = [data[j], data[i]];
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
+				const data = imageData.data;
+				const temp = [];
+
+				for (let i = 0; i < data.length; i += 4) {
+					temp.push(data[i], data[i + 1], data[i + 2]);
+				}
+
+				temp.push(...temp.splice(0, (-dx % temp.length + temp.length) % temp.length))
+
+				let offset = 0;
+
+				for (let i = 0; i < temp.length; i += 3) {
+					data[offset + i] = temp[i];
+					data[offset + i + 1] = temp[i + 1];
+					data[offset + i + 2] = temp[i + 2];
+
+					offset++;
+				}
+
+				ctx.putImageData(imageData, gx + ox, gy + oy);
+			});
+		}
+
+		function applyShuffleChannelOrderRule(values) {
+			getRegion(values, ({ gx, gy, ox, oy, w, h }) => {
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
+				const data = imageData.data;
+
+				const order = [0, 1, 2];
+
+				for (let i = 0; i < 3; i++) {
+					const j = randomInt(0, 2);
+					[order[i], order[j]] = [order[j], order[i]];
+				}
+
+				for (let i = 0; i < data.length; i += 4) {
+					const pixel = [
+						data[i],
+						data[i + 1],
+						data[i + 2],
+					];
+
+					for (j = 0; j < 3; j++) {
+						data[i] = pixel[order[0]];
+						data[i + 1] = pixel[order[1]];
+						data[i + 2] = pixel[order[2]];
+					}
+				}
+
+				ctx.putImageData(imageData, gx + ox, gy + oy);
+			});
+		}
+
+		function applyReverseChannelsRule(values) {
+			getRegion(values, ({ gx, gy, ox, oy, w, h }) => {
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
+				const data = imageData.data;
+
+				for (let i = 0; i < data.length / 2; i += 4) {
+					const j = data.length - 4 - i;
+					[data[i], data[j + 2]] = [data[j + 2], data[i]];
+					[data[i + 1], data[j + 1]] = [data[j + 1], data[i + 1]];
+					[data[i + 2], data[j]] = [data[j], data[i + 2]];
+				}
+
+				ctx.putImageData(imageData, gx + ox, gy + oy);
+			});
+		}
+
+		function rotateBlock90(data, w, h, turns) {
+			turns = ((turns % 4) + 4) % 4;
+			if (turns === 0) return { data, w, h };
+
+			const outW = (turns === 2) ? w : h;
+			const outH = (turns === 2) ? h : w;
+
+			const out = new Uint8ClampedArray(outW * outH * 4);
+
+			for (let y = 0; y < h; y++) {
+				for (let x = 0; x < w; x++) {
+					const src = (y * w + x) * 4;
+
+					let tx, ty;
+
+					if (turns === 1) {
+						tx = h - 1 - y;
+						ty = x;
+					} else if (turns === 2) {
+						tx = w - 1 - x;
+						ty = h - 1 - y;
+					} else {
+						tx = y;
+						ty = w - 1 - x;
 					}
 
-					ctx.putImageData(imageData, x - x1, y - y1);
+					const dst = (ty * outW + tx) * 4;
+
+					out[dst] = data[src];
+					out[dst + 1] = data[src + 1];
+					out[dst + 2] = data[src + 2];
+					out[dst + 3] = data[src + 3];
 				}
 			}
+
+			return { data: out, w: outW, h: outH };
+		}
+
+		function applyRotateRegionRule(values) {
+			getRegion(values, ({ gx, gy, ox, oy, w, h }) => {
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
+
+				const turns = randomInt(values.turns.min, values.turns.max);
+
+				const { data, w: newW, h: newH } =
+					rotateBlock90(imageData.data, w, h, turns);
+
+				ctx.putImageData(
+					new ImageData(data, newW, newH),
+					gx + ox,
+					gy + oy
+				);
+			});
+		}
+
+		function applyScrambleColorsRule(values) {
+			getRegion(values, ({ gx, gy, ox, oy, w, h }) => {
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
+				const data = imageData.data;
+
+				const colors = new Map();
+
+				for (let i = 0; i < data.length; i += 4) {
+					const c =
+						(data[i]     << 24) |
+						(data[i + 1] << 16) |
+						(data[i + 2] <<  8) |
+						 data[i + 3];
+
+					if (!colors.has(c)) {
+						const newColor =
+							(randomInt(0, 255) << 24) |
+							(randomInt(0, 255) << 16) |
+							(randomInt(0, 255) <<  8) |
+							 data[i + 3];
+
+						colors.set(c, newColor);
+					}
+				}
+
+				for (let i = 0; i < data.length; i += 4) {
+					const packed =
+						(data[i]     << 24) |
+						(data[i + 1] << 16) |
+						(data[i + 2] <<  8) |
+						 data[i + 3];
+
+					const newColor = colors.get(packed);
+
+					data[i]     = (newColor >>> 24) & 0xFF;
+					data[i + 1] = (newColor >>> 16) & 0xFF;
+					data[i + 2] = (newColor >>>  8) & 0xFF;
+					data[i + 3] =  newColor         & 0xFF;
+				}
+
+				ctx.putImageData(imageData, gx + ox, gy + oy);
+			});
+		}
+
+		function applyRemapColorsRule(values) {
+			getRegion(values, ({ gx, gy, ox, oy, w, h }) => {
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
+				const data = imageData.data;
+
+				const indexOf = new Map();
+				const unique = [];
+
+				for (let i = 0; i < data.length; i += 4) {
+					const c =
+						(data[i]     << 24) |
+						(data[i + 1] << 16) |
+						(data[i + 2] <<  8) |
+						 data[i + 3];
+
+					if (!indexOf.has(c)) {
+						indexOf.set(c, unique.length);
+						unique.push(c);
+					}
+				}
+
+				for (let i = unique.length - 1; i > 0; i--) {
+					const j = randomInt(0, i);
+					[unique[i], unique[j]] = [unique[j], unique[i]];
+				}
+
+				for (let i = 0; i < data.length; i += 4) {
+					const packed =
+						(data[i]     << 24) |
+						(data[i + 1] << 16) |
+						(data[i + 2] <<  8) |
+						 data[i + 3];
+
+					const newColor = unique[indexOf.get(packed)];
+
+					data[i]     = (newColor >>> 24) & 0xFF;
+					data[i + 1] = (newColor >>> 16) & 0xFF;
+					data[i + 2] = (newColor >>>  8) & 0xFF;
+					data[i + 3] =  newColor         & 0xFF;
+				}
+
+				ctx.putImageData(imageData, gx + ox, gy + oy);
+			});
+		}
+
+		function applyNoiseRegionRule(values) {
+			getRegion(values, ({ gx, gy, ox, oy, w, h }) => {
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
+				const data = imageData.data;
+
+				for (let i = 0; i < data.length; i += 4) {
+					data[i] = randomInt(0, 255);
+					data[i + 1] = randomInt(0, 255);
+					data[i + 2] = randomInt(0, 255);
+				}
+
+				ctx.putImageData(imageData, gx + ox, gy + oy);
+			});
 		}
 
 		function applyShufflePixelsRule(values) {
-			for (let y = 0; y < canvas.height; y += randomInt(values.dy.min, values.dy.max)) {
-				for (let x = 0; x < canvas.width; x += randomInt(values.dx.min, values.dx.max)) {
-					if (Math.random() > values.frequency) continue;
+			getRegion(values, ({ gx, gy, ox, oy, w, h }) => {
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
+				const data = new Uint32Array(imageData.data.buffer);
 
-					const x1 = randomInt(values.x1.min, values.x1.max);
-					const y1 = randomInt(values.y1.min, values.y1.max);
-					const x2 = randomInt(values.x2.min, values.x2.max);
-					const y2 = randomInt(values.y2.min, values.y2.max);
-
-					if (!(x2 - x1) || !(y2 - y1)) continue;
-
-					const imageData = ctx.getImageData(x - x1, y - y1, x2 - x1, y2 - y1);
-					const data = new Uint32Array(imageData.data.buffer);
-
-					for (let i = data.length - 1; i > 0; i--) {
-						const j = Math.floor(Math.random() * (i + 1));
-						[data[i], data[j]] = [data[j], data[i]];
-					}
-
-					imageData.data = new Uint8ClampedArray(data);
-
-					ctx.putImageData(imageData, x - x1, y - y1);
+				for (let i = 0; i < data.length; i++) {
+					const j = randomInt(0, i);
+					[data[i], data[j]] = [data[j], data[i]];
 				}
-			}
+
+				imageData.data = new Uint8ClampedArray(data);
+
+				ctx.putImageData(imageData, gx + ox, gy + oy);
+			});
 		}
 
-		function applyInvertRule(values) {
-			for (let y = 0; y < canvas.height; y += randomInt(values.dy.min, values.dy.max)) {
-				for (let x = 0; x < canvas.width; x += randomInt(values.dx.min, values.dx.max)) {
-					if (Math.random() > values.frequency) continue;
+		function applyInvertColorsRule(values) {
+			getRegion(values, ({ gx, gy, ox, oy, w, h }) => {
+				const imageData = ctx.getImageData(gx + ox, gy + oy, w, h);
+				const data = imageData.data;
 
-					const x1 = randomInt(values.x1.min, values.x1.max);
-					const y1 = randomInt(values.y1.min, values.y1.max);
-					const x2 = randomInt(values.x2.min, values.x2.max);
-					const y2 = randomInt(values.y2.min, values.y2.max);
-
-					if (!(x2 - x1) || !(y2 - y1)) continue;
-
-					const imageData = ctx.getImageData(x - x1, y - y1, x2 - x1, y2 - y1);
-					const data = imageData.data;
-
-					for (let i = 0; i < data.length; i += 4) {
-						data[i] = 255 - data[i];
-						data[i + 1] = 255 - data[i + 1];
-						data[i + 2] = 255 - data[i + 2];
-					}
-
-					ctx.putImageData(imageData, x - x1, y - y1);
+				for (let i = 0; i < data.length; i += 4) {
+					data[i] = 255 - data[i];
+					data[i + 1] = 255 - data[i + 1];
+					data[i + 2] = 255 - data[i + 2];
 				}
-			}
+
+				ctx.putImageData(imageData, gx + ox, gy + oy);
+			});
 		}
 
 		document.getElementById('add-rule').addEventListener('click', () => {
@@ -577,12 +956,17 @@
 
 			template.querySelector('.rule-name').textContent = ruleType;
 			template.querySelector('.rule-control').dataset.type = ruleType;
+			template.querySelector('.rule-info').textContent = rulesInfo[ruleType];
 
 			if (additionalInputs) {
 				template.querySelector('.rule-inputs').after(additionalInputs.content.cloneNode(true));
 			}
 
 			document.getElementById('rules').appendChild(template);
+
+			if (img.width) {
+				document.getElementById('update-image').disabled = false;
+			}
 		});
 
 		document.getElementById('update-image').addEventListener('click', generateImage);
@@ -608,15 +992,19 @@
 				targetRule.nextElementSibling?.after(targetRule);
 			} else if (e.target.matches('.rule-remove')) {
 				e.target.closest('.rule-control').remove();
+
+				if (!document.getElementById('rules').children.length) {
+					document.getElementById('update-image').disabled = true;
+				}
 			}
 		});
 
-		document.addEventListener('dragover', function(e) {
+		document.addEventListener('dragover', e => {
 			e.preventDefault();
 			e.stopPropagation();
 		});
 
-		document.addEventListener('drop', function(e) {
+		document.addEventListener('drop', e => {
 			e.preventDefault();
 			e.stopPropagation();
 
@@ -632,10 +1020,78 @@
 			}
 		});
 
+		canvas.addEventListener('click', () => {
+			imageInput.click();
+		});
+
+		document.addEventListener('click', e => {
+			if (e.target.matches('.increment-scale')) {
+				const containerElm = e.target.closest('.scale-input');
+				const inputElm = containerElm.querySelector('input');
+				const inputValue = inputElm.value * 2;
+				inputElm.value = inputValue;
+
+				containerElm.querySelector('.decrement-scale').disabled = false;
+
+				if (inputValue === 16) {
+					e.target.disabled = true;
+				}
+
+				if (!img.width) return;
+
+				if (inputElm.id === 'input-scale') {
+					setImage(imageInput);
+				} else if (inputElm.id === 'output-scale') {
+					document.getElementById('image-width').textContent = img.width ? (`${ img.width }px → ${ img.width * inputValue }px`) : '-';
+					document.getElementById('image-height').textContent = img.height ? (`${ img.height }px → ${ img.width * inputValue }px`) : '-';
+				}
+			} else if (e.target.matches('.decrement-scale')) {
+				const containerElm = e.target.closest('.scale-input');
+				const inputElm = containerElm.querySelector('input');
+				const inputValue = inputElm.value / 2;
+				inputElm.value = inputValue;
+
+				containerElm.querySelector('.increment-scale').disabled = false;
+
+				if (inputValue === 0.0625) {
+					e.target.disabled = true;
+				}
+
+				if (!img.width) return;
+
+				if (inputElm.id === 'input-scale') {
+					setImage(imageInput);
+				} else if (inputElm.id === 'output-scale') {
+					document.getElementById('image-width').textContent = img.width ? (`${ img.width }px → ${ img.width * inputValue }px`) : '-';
+					document.getElementById('image-height').textContent = img.height ? (`${ img.height }px → ${ img.width * inputValue }px`) : '-';
+				}
+			}
+		});
+
 		window.addEventListener('load', () => {
 			if (imageInput.files) {
 				imageInput.dispatchEvent(new Event('change'));
 			}
+		});
+
+		document.getElementById('save-image').addEventListener('click', () => {
+			const outputScale = Number(document.getElementById('output-scale').value);
+
+			const scaled = document.createElement('canvas');
+			scaled.width = canvas.width * outputScale;
+			scaled.height = canvas.height * outputScale;
+
+			const ctx = scaled.getContext('2d');
+			ctx.imageSmoothingEnabled = false;
+			ctx.drawImage(canvas, 0, 0, scaled.width, scaled.height);
+
+			scaled.toBlob(blob => {
+				const a = document.createElement('a');
+				a.href = URL.createObjectURL(blob);
+				a.download = (document.getElementById('image-name').value ?? 'image') + '.png';
+				a.click();
+				URL.revokeObjectURL(a.href);
+			}, 'image/png');
 		});
 	</script>
 </body>
